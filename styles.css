@@ -142,7 +142,7 @@
   background: var(--background-secondary);
 }
 
-.schema-type-block summary {
+.schema-type-block > summary {
   cursor: pointer;
   padding: 6px 0;
   user-select: none;
@@ -152,7 +152,7 @@
   list-style: none;
 }
 
-.schema-type-block summary::-webkit-details-marker,
+.schema-type-block > summary::-webkit-details-marker,
 .schema-field-row summary::-webkit-details-marker,
 .schema-lookup-row summary::-webkit-details-marker {
   display: none;
@@ -182,7 +182,7 @@ details[open] > summary > .schema-summary-chevron {
   transform: rotate(90deg);
 }
 
-.schema-type-block[open] summary {
+.schema-type-block[open] > summary {
   border-bottom: 1px solid var(--background-modifier-border);
   margin-bottom: 8px;
 }
