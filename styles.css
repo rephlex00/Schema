@@ -1,5 +1,47 @@
 /* Schema plugin styles */
 
+/* Type header banner — subtle strip at the top of typed-note views */
+.schema-type-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 14px;
+  height: 26px;
+  font-size: 11px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  background: color-mix(in srgb, var(--type-color, var(--text-muted)) 8%, var(--background-primary));
+  color: var(--type-color, var(--text-muted));
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.schema-type-banner-icon {
+  display: inline-flex;
+  align-items: center;
+  width: 14px;
+  height: 14px;
+  opacity: 0.85;
+}
+
+.schema-type-banner-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.schema-type-banner-name {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+}
+
+.schema-type-banner-folder {
+  margin-left: auto;
+  color: var(--text-faint);
+  font-family: var(--font-monospace);
+  font-size: 10px;
+}
+
+
 /* Settings tab — type list */
 .schema-types-list {
   margin-top: 8px;

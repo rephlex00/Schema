@@ -14,6 +14,7 @@ import type { TypeSchema } from "./schema/types";
 import { FieldPickerModal } from "./ui/field-edit-modal";
 import { QueryPlaygroundModal } from "./ui/query-playground";
 import { SchemaSettingsTab } from "./ui/settings-tab";
+import { TypeBannerManager } from "./ui/type-banner";
 
 /** Kind controls which widget renders in each type's Defaults section. */
 export type AutoRefreshedFieldKind = "text" | "color" | "icon";
@@ -60,6 +61,7 @@ export default class SchemaPlugin extends Plugin {
 	folderWatcher!: FolderMappingWatcher;
 	lookups!: LookupEngine;
 	fmLookupRenderer!: FrontmatterLookupRenderer;
+	typeBanner!: TypeBannerManager;
 	/** Shared "currently being mutated by a watcher" set. Both TypeChangeWatcher
 	 *  and FolderMappingWatcher add the file path here while writing, so the
 	 *  other watcher's listener no-ops on its own write. */
@@ -74,6 +76,7 @@ export default class SchemaPlugin extends Plugin {
 		this.folderWatcher = new FolderMappingWatcher(this);
 		this.lookups = new LookupEngine(this.app);
 		this.fmLookupRenderer = new FrontmatterLookupRenderer(this);
+		this.typeBanner = new TypeBannerManager(this);
 
 		registerBlockRenderer(this);
 
@@ -96,6 +99,7 @@ export default class SchemaPlugin extends Plugin {
 			this.typeWatcher.start();
 			this.folderWatcher.start();
 			this.fmLookupRenderer.start();
+			this.typeBanner.start();
 			console.log(
 				`[schema] lookup runtime: ${this.lookups.usingDataview() ? "dataview" : "builtin"}`
 			);
@@ -186,6 +190,7 @@ export default class SchemaPlugin extends Plugin {
 	onunload() {
 		this.typeWatcher?.stop();
 		this.folderWatcher?.stop();
+		this.typeBanner?.stop();
 		this.loader?.stop();
 		console.log("[schema] Plugin unloaded.");
 	}
