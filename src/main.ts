@@ -1,5 +1,8 @@
-import { Notice, Plugin } from "obsidian";
+import { Notice, Plugin, TFile } from "obsidian";
+import { cleanFrontmatter } from "./lifecycle/clean";
 import { CreateCommandRegistry } from "./lifecycle/commands";
+import { reshelveToSchema } from "./lifecycle/reshelve";
+import { TypeChangeWatcher } from "./lifecycle/watcher";
 import { SchemaLoader } from "./schema/loader";
 import type { TypeSchema } from "./schema/types";
 
@@ -19,6 +22,7 @@ export default class SchemaPlugin extends Plugin {
 	settings: SchemaSettings = DEFAULT_SETTINGS;
 	loader!: SchemaLoader;
 	createCommands!: CreateCommandRegistry;
+	typeWatcher!: TypeChangeWatcher;
 
 	async onload() {
 		await this.loadSettings();
@@ -27,6 +31,7 @@ export default class SchemaPlugin extends Plugin {
 			schemaFolder: this.settings.schemaFolder,
 		});
 		this.createCommands = new CreateCommandRegistry(this);
+		this.typeWatcher = new TypeChangeWatcher(this);
 
 		// Defer initial schema scan until the vault has finished indexing,
 		// so cachedRead returns up-to-date content.
@@ -41,6 +46,7 @@ export default class SchemaPlugin extends Plugin {
 					console.log(`[schema] loaded ${count} types from ${this.settings.schemaFolder}`);
 				}
 				this.createCommands.refresh(this.loader.getAll());
+				this.typeWatcher.start();
 			});
 		});
 
@@ -67,12 +73,47 @@ export default class SchemaPlugin extends Plugin {
 			callback: () => this.showLoadedTypes(),
 		});
 
+		this.addCommand({
+			id: "reshelve-active",
+			name: "Reshelve and clean active file",
+			checkCallback: (checking) => {
+				const file = this.app.workspace.getActiveFile();
+				if (!file || file.extension !== "md") return false;
+				const cache = this.app.metadataCache.getFileCache(file);
+				const t = cache?.frontmatter?.type;
+				if (typeof t !== "string") return false;
+				const schema = this.loader.get(t);
+				if (!schema) return false;
+				if (checking) return true;
+				void this.runManualReshelve(file, schema);
+				return true;
+			},
+		});
+
 		console.log("[schema] Plugin loaded.");
 	}
 
 	onunload() {
+		this.typeWatcher?.stop();
 		this.loader?.stop();
 		console.log("[schema] Plugin unloaded.");
+	}
+
+	private async runManualReshelve(file: TFile, schema: TypeSchema): Promise<void> {
+		const cache = this.app.metadataCache.getFileCache(file);
+		const fm = (cache?.frontmatter as Record<string, unknown> | undefined) ?? {};
+		const moveResult = await reshelveToSchema(this.app, file, schema, fm);
+		const moved =
+			moveResult && moveResult.from !== moveResult.to
+				? this.app.vault.getAbstractFileByPath(moveResult.to)
+				: file;
+		const target = moved instanceof TFile ? moved : file;
+		const result = await cleanFrontmatter(this.app, target, schema);
+		const moveSummary =
+			moveResult && moveResult.from !== moveResult.to ? ` moved → ${moveResult.to}` : "";
+		new Notice(
+			`Schema: ${schema.name}${moveSummary} · removed ${result.removed.length}, added ${result.added.length}`
+		);
 	}
 
 	private showLoadedTypes() {
