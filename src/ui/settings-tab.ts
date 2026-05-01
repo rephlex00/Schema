@@ -2,6 +2,7 @@ import { App, PluginSettingTab, Setting } from "obsidian";
 import type SchemaPlugin from "../main";
 import { AddTypeModal } from "./add-type-modal";
 import { AutoRefreshedFieldsEditor } from "./auto-refreshed-fields-editor";
+import { FolderMappingsEditor } from "./folder-mappings-editor";
 import { TypeEditor } from "./type-editor";
 
 /**
@@ -65,6 +66,9 @@ export class SchemaSettingsTab extends PluginSettingTab {
 
 		parent.createEl("h4", { text: "Auto-refreshed frontmatter fields" });
 		new AutoRefreshedFieldsEditor(this.plugin, () => this.display()).render(parent);
+
+		parent.createEl("h4", { text: "Folder mappings" });
+		new FolderMappingsEditor(this.plugin, () => this.display()).render(parent);
 
 		const runtime = this.plugin.lookups.usingDataview() ? "Dataview (installed)" : "Built-in fallback";
 		new Setting(parent).setName("Lookup runtime").setDesc(runtime).setDisabled(true);

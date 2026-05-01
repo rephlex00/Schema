@@ -1,6 +1,7 @@
 import { Notice, Plugin, TFile } from "obsidian";
 import { cleanFrontmatter } from "./lifecycle/clean";
 import { CreateCommandRegistry } from "./lifecycle/commands";
+import { FolderMappingWatcher } from "./lifecycle/folder-mapping-watcher";
 import { reshelveToSchema } from "./lifecycle/reshelve";
 import { TypeChangeWatcher } from "./lifecycle/watcher";
 import { registerBlockRenderer } from "./lookup/block-renderer";
@@ -29,6 +30,12 @@ export interface SchemaSettings {
 	autoRefreshedFields: AutoRefreshedField[];
 	/** Auto-reshelve a file when its `type:` frontmatter changes. */
 	autoReshelveOnTypeChange: boolean;
+	/** Folder → type-name map. Files created in (or moved into) a mapped folder
+	 *  are auto-classified as that type. Most-specific (longest) folder match
+	 *  wins. One mapping per folder. */
+	folderMappings: Record<string, string>;
+	/** Master toggle for the folder→type auto-classification behavior. */
+	autoClassifyOnFolderMatch: boolean;
 }
 
 const DEFAULT_SETTINGS: SchemaSettings = {
@@ -38,6 +45,8 @@ const DEFAULT_SETTINGS: SchemaSettings = {
 		{ name: "color", kind: "color" },
 	],
 	autoReshelveOnTypeChange: true,
+	folderMappings: {},
+	autoClassifyOnFolderMatch: true,
 };
 
 export default class SchemaPlugin extends Plugin {
@@ -45,8 +54,13 @@ export default class SchemaPlugin extends Plugin {
 	loader!: SchemaLoader;
 	createCommands!: CreateCommandRegistry;
 	typeWatcher!: TypeChangeWatcher;
+	folderWatcher!: FolderMappingWatcher;
 	lookups!: LookupEngine;
 	fmLookupRenderer!: FrontmatterLookupRenderer;
+	/** Shared "currently being mutated by a watcher" set. Both TypeChangeWatcher
+	 *  and FolderMappingWatcher add the file path here while writing, so the
+	 *  other watcher's listener no-ops on its own write. */
+	readonly lifecycleInFlight = new Set<string>();
 
 	async onload() {
 		await this.loadSettings();
@@ -54,6 +68,7 @@ export default class SchemaPlugin extends Plugin {
 		this.loader = new SchemaLoader();
 		this.createCommands = new CreateCommandRegistry(this);
 		this.typeWatcher = new TypeChangeWatcher(this);
+		this.folderWatcher = new FolderMappingWatcher(this);
 		this.lookups = new LookupEngine(this.app);
 		this.fmLookupRenderer = new FrontmatterLookupRenderer(this);
 
@@ -76,6 +91,7 @@ export default class SchemaPlugin extends Plugin {
 			}
 			this.createCommands.refresh(this.loader.getAll());
 			this.typeWatcher.start();
+			this.folderWatcher.start();
 			this.fmLookupRenderer.start();
 			console.log(
 				`[schema] lookup runtime: ${this.lookups.usingDataview() ? "dataview" : "builtin"}`
@@ -148,6 +164,7 @@ export default class SchemaPlugin extends Plugin {
 
 	onunload() {
 		this.typeWatcher?.stop();
+		this.folderWatcher?.stop();
 		this.loader?.stop();
 		console.log("[schema] Plugin unloaded.");
 	}

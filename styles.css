@@ -166,6 +166,39 @@
   color: var(--text-error);
 }
 
+/* Folder mappings list (global config) */
+.schema-folder-mappings-editor {
+  margin-bottom: 18px;
+}
+
+.schema-fm-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 8px 0;
+}
+
+.schema-fm-row {
+  display: grid;
+  grid-template-columns: 1fr 160px auto;
+  gap: 6px;
+  align-items: center;
+}
+
+.schema-fm-folder,
+.schema-fm-type {
+  padding: 4px 8px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  background: var(--background-primary);
+  color: var(--text-normal);
+  font-size: 13px;
+}
+
+.schema-fm-folder {
+  font-family: var(--font-monospace);
+}
+
 /* Color picker control (per-type Defaults) */
 .schema-color-control {
   display: flex;

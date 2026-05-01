@@ -14,11 +14,16 @@ import { reshelveToSchema } from "./reshelve";
 export class TypeChangeWatcher {
 	private readonly plugin: SchemaPlugin;
 	private readonly lastSeenType = new Map<string, string>();
-	private readonly inFlight = new Set<string>();
 	private ref: EventRef | null = null;
 
 	constructor(plugin: SchemaPlugin) {
 		this.plugin = plugin;
+	}
+
+	/** Shared in-flight set with FolderMappingWatcher. Either watcher locks the
+	 *  path while it's writing so the other doesn't react to its own write. */
+	private get inFlight(): Set<string> {
+		return this.plugin.lifecycleInFlight;
 	}
 
 	start(): void {
@@ -41,7 +46,6 @@ export class TypeChangeWatcher {
 			this.ref = null;
 		}
 		this.lastSeenType.clear();
-		this.inFlight.clear();
 	}
 
 	private async onChanged(file: TFile): Promise<void> {
