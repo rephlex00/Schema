@@ -3,6 +3,12 @@ import { cleanFrontmatter } from "./lifecycle/clean";
 import { CreateCommandRegistry } from "./lifecycle/commands";
 import { reshelveToSchema } from "./lifecycle/reshelve";
 import { TypeChangeWatcher } from "./lifecycle/watcher";
+import { registerBlockRenderer } from "./lookup/block-renderer";
+import { LookupEngine } from "./lookup/engine";
+import {
+	FrontmatterLookupRenderer,
+	migrateLookupsToBlock,
+} from "./lookup/frontmatter-renderer";
 import { SchemaLoader } from "./schema/loader";
 import type { TypeSchema } from "./schema/types";
 
@@ -23,6 +29,8 @@ export default class SchemaPlugin extends Plugin {
 	loader!: SchemaLoader;
 	createCommands!: CreateCommandRegistry;
 	typeWatcher!: TypeChangeWatcher;
+	lookups!: LookupEngine;
+	fmLookupRenderer!: FrontmatterLookupRenderer;
 
 	async onload() {
 		await this.loadSettings();
@@ -32,6 +40,10 @@ export default class SchemaPlugin extends Plugin {
 		});
 		this.createCommands = new CreateCommandRegistry(this);
 		this.typeWatcher = new TypeChangeWatcher(this);
+		this.lookups = new LookupEngine(this.app);
+		this.fmLookupRenderer = new FrontmatterLookupRenderer(this);
+
+		registerBlockRenderer(this);
 
 		// Defer initial schema scan until the vault has finished indexing,
 		// so cachedRead returns up-to-date content.
@@ -47,6 +59,10 @@ export default class SchemaPlugin extends Plugin {
 				}
 				this.createCommands.refresh(this.loader.getAll());
 				this.typeWatcher.start();
+				this.fmLookupRenderer.start();
+				console.log(
+					`[schema] lookup runtime: ${this.lookups.usingDataview() ? "dataview" : "builtin"}`
+				);
 			});
 		});
 
@@ -71,6 +87,23 @@ export default class SchemaPlugin extends Plugin {
 			id: "show-loaded-types",
 			name: "Show loaded types",
 			callback: () => this.showLoadedTypes(),
+		});
+
+		this.addCommand({
+			id: "refresh-frontmatter-lookups",
+			name: "Refresh frontmatter lookups (vault-wide)",
+			callback: async () => {
+				const result = await this.fmLookupRenderer.refreshAll();
+				new Notice(
+					`Schema: refreshed lookups — ${result.updated} files updated, ${result.errors} errors.`
+				);
+			},
+		});
+
+		this.addCommand({
+			id: "migrate-lookups-to-block",
+			name: "Migrate lookups to block mode",
+			callback: () => migrateLookupsToBlock(this),
 		});
 
 		this.addCommand({
