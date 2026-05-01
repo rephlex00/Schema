@@ -87,8 +87,21 @@ function buildRenderContext(prompted: Record<string, string>): Record<string, un
 		__day: pad(now.getDate()),
 		__hour: pad(now.getHours()),
 		__minute: pad(now.getMinutes()),
+		__week: pad(isoWeek(now)),
 		datetime: `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`,
 	};
+}
+
+function isoWeek(date: Date): number {
+	const target = new Date(date.valueOf());
+	const dayNr = (date.getDay() + 6) % 7;
+	target.setDate(target.getDate() - dayNr + 3);
+	const firstThursday = target.valueOf();
+	target.setMonth(0, 1);
+	if (target.getDay() !== 4) {
+		target.setMonth(0, 1 + ((4 - target.getDay() + 7) % 7));
+	}
+	return Math.ceil((firstThursday - target.valueOf()) / 604800000) + 1;
 }
 
 function pickFilename(schema: TypeSchema, ctx: Record<string, unknown>): string {
