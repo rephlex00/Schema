@@ -1,4 +1,4 @@
-import { Notice, Setting } from "obsidian";
+import { Notice, Setting, setIcon } from "obsidian";
 import type SchemaPlugin from "../main";
 import type { TypeSchema } from "../schema/types";
 import { FieldListEditor } from "./field-list-editor";
@@ -33,8 +33,19 @@ export class TypeEditor {
 		this.container = details;
 
 		const summary = details.createEl("summary");
+		const iconName = typeof schema.defaults?.icon === "string" ? schema.defaults.icon : "";
+		const color = typeof schema.defaults?.color === "string" ? schema.defaults.color : "";
+		if (iconName) {
+			const iconEl = summary.createSpan({ cls: "schema-type-icon" });
+			setIcon(iconEl, iconName);
+			if (color) iconEl.style.color = color;
+		}
+		const nameEl = summary.createEl("strong", {
+			text: schema.name,
+			cls: "schema-type-name",
+		});
+		if (color) nameEl.style.color = color;
 		const ext = schema.extends ? ` extends ${schema.extends}` : "";
-		summary.createEl("strong", { text: schema.name });
 		summary.createEl("span", {
 			cls: "schema-type-meta",
 			text: ` ${ext} · ${schema.fields.length} fields · ${schema.lookups.length} lookups${schema.folder ? " · " + schema.folder : " · (abstract)"}`,

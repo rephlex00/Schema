@@ -29,6 +29,22 @@
   font-size: 14px;
 }
 
+.schema-type-block summary .schema-type-icon {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
+.schema-type-block summary .schema-type-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.schema-type-block summary .schema-type-name {
+  vertical-align: middle;
+}
+
 .schema-type-meta {
   font-size: 11px;
   color: var(--text-muted);
