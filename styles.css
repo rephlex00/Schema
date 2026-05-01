@@ -372,22 +372,43 @@ details[open] > summary > .schema-summary-chevron {
   overflow-x: auto;
 }
 
-/* Field/lookup row editors */
-.schema-field-row,
-.schema-lookup-row {
-  border-top: 1px solid var(--background-modifier-border);
-  padding: 4px 0;
+/* Field/lookup row editors — match the type-block "card" pattern but with a
+ * darker background so they read as nested children. */
+.schema-fields-list,
+.schema-lookups-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
 }
 
-.schema-field-row details summary,
-.schema-lookup-row details summary {
+.schema-field-row,
+.schema-lookup-row {
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  background: var(--background-primary);
+  padding: 0;
+}
+
+.schema-field-row > details > summary,
+.schema-lookup-row > details > summary {
   cursor: pointer;
-  padding: 4px 0;
+  padding: 6px 10px;
   font-family: var(--font-monospace);
   font-size: 12px;
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+.schema-field-row > details[open] > summary,
+.schema-lookup-row > details[open] > summary {
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.schema-field-body,
+.schema-lookup-body {
+  padding: 6px 10px 8px 10px;
 }
 
 .schema-field-row .schema-row-text,
