@@ -11,6 +11,7 @@ import {
 } from "./lookup/frontmatter-renderer";
 import { SchemaLoader } from "./schema/loader";
 import type { TypeSchema } from "./schema/types";
+import { FieldPickerModal } from "./ui/field-edit-modal";
 import { SchemaSettingsTab } from "./ui/settings-tab";
 
 interface SchemaSettings {
@@ -107,6 +108,23 @@ export default class SchemaPlugin extends Plugin {
 			id: "migrate-lookups-to-block",
 			name: "Migrate lookups to block mode",
 			callback: () => migrateLookupsToBlock(this),
+		});
+
+		this.addCommand({
+			id: "edit-field",
+			name: "Edit field",
+			checkCallback: (checking) => {
+				const file = this.app.workspace.getActiveFile();
+				if (!file || file.extension !== "md") return false;
+				const cache = this.app.metadataCache.getFileCache(file);
+				const t = cache?.frontmatter?.type;
+				if (typeof t !== "string") return false;
+				const schema = this.loader.get(t);
+				if (!schema) return false;
+				if (checking) return true;
+				new FieldPickerModal(this, file, schema).open();
+				return true;
+			},
 		});
 
 		this.addCommand({
