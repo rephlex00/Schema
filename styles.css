@@ -87,6 +87,14 @@
   font-family: var(--font-monospace);
 }
 
+.schema-filename-preview {
+  font-size: 11px;
+  color: var(--text-faint);
+  padding: 2px 0 6px 0;
+  font-family: var(--font-monospace);
+  margin-left: 16px;
+}
+
 .schema-validation-list {
   margin: 0 0 0 16px;
   padding: 0;

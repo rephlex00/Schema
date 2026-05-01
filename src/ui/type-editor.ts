@@ -2,12 +2,25 @@ import { Notice, Setting, setIcon } from "obsidian";
 import type SchemaPlugin from "../main";
 import { inheritedFieldNames, inheritedLookupNames } from "../schema/resolve";
 import type { TypeSchema } from "../schema/types";
+import { renderTemplate } from "../util/liquid";
 import { FieldListEditor } from "./field-list-editor";
 import { LookupListEditor } from "./lookup-list-editor";
-import { confirmAction } from "./prompt-modal";
+import { confirmAction, promptForString } from "./prompt-modal";
 
 function isHex(s: string): boolean {
 	return /^#[0-9A-Fa-f]{6}$/.test(s.trim());
+}
+
+function isoWeekNumber(date: Date): number {
+	const target = new Date(date.valueOf());
+	const dayNr = (date.getDay() + 6) % 7;
+	target.setDate(target.getDate() - dayNr + 3);
+	const firstThursday = target.valueOf();
+	target.setMonth(0, 1);
+	if (target.getDay() !== 4) {
+		target.setMonth(0, 1 + ((4 - target.getDay() + 7) % 7));
+	}
+	return Math.ceil((firstThursday - target.valueOf()) / 604800000) + 1;
 }
 
 /**
@@ -94,14 +107,24 @@ export class TypeEditor {
 					.onChange((v) => this.queue({ folder: v || undefined }));
 			});
 
+		const filenamePreview = parent.createDiv({ cls: "schema-filename-preview" });
+		const updatePreview = (template: string) => {
+			filenamePreview.setText(`→ ${this.previewFilename(schema, template)}`);
+		};
+		updatePreview(schema.filename ?? "");
+
 		new Setting(parent)
 			.setName("Filename template")
 			.setDesc("Liquid template for new note filenames. Blank → timestamp.")
 			.addText((t) => {
 				t.setValue(schema.filename ?? "")
 					.setPlaceholder("e.g. {{firstname}} {{lastname}}")
-					.onChange((v) => this.queue({ filename: v || undefined }));
+					.onChange((v) => {
+						updatePreview(v);
+						this.queue({ filename: v || undefined });
+					});
 			});
+		parent.append(filenamePreview);
 
 		new Setting(parent)
 			.setName("Body template")
@@ -241,19 +264,74 @@ export class TypeEditor {
 	}
 
 	private renderDelete(parent: HTMLElement, schema: TypeSchema): void {
-		new Setting(parent).addButton((btn) => {
-			btn.setButtonText("Delete type")
-				.setWarning()
-				.onClick(async () => {
-					const ok = await confirmAction(
-						this.plugin.app,
-						`Delete type "${schema.name}"? Existing notes with this type will keep their frontmatter but lose schema validation.`
-					);
-					if (!ok) return;
-					this.plugin.loader.remove(schema.name);
-					new Notice(`Schema: deleted type "${schema.name}".`);
-				});
-		});
+		new Setting(parent)
+			.addButton((btn) => {
+				btn.setButtonText("Clone type").onClick(() => void this.cloneType(schema));
+			})
+			.addButton((btn) => {
+				btn.setButtonText("Delete type")
+					.setWarning()
+					.onClick(async () => {
+						const ok = await confirmAction(
+							this.plugin.app,
+							`Delete type "${schema.name}"? Existing notes with this type will keep their frontmatter but lose schema validation.`
+						);
+						if (!ok) return;
+						this.plugin.loader.remove(schema.name);
+						new Notice(`Schema: deleted type "${schema.name}".`);
+					});
+			});
+	}
+
+	/** Render the filename template with placeholder values for any prompted
+	 *  fields, plus the current date. Just for the inline preview. */
+	private previewFilename(schema: TypeSchema, template: string): string {
+		const now = new Date();
+		const pad = (n: number) => String(n).padStart(2, "0");
+		const ctx: Record<string, unknown> = {
+			__year: String(now.getFullYear()),
+			__month: pad(now.getMonth() + 1),
+			__day: pad(now.getDate()),
+			__hour: pad(now.getHours()),
+			__minute: pad(now.getMinutes()),
+			__week: pad(isoWeekNumber(now)),
+			__timestamp: `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}`,
+		};
+		for (const f of schema.fields) {
+			if (f.promptOnCreate && !(f.name in ctx)) {
+				ctx[f.name] = `<${f.name}>`;
+			}
+		}
+		const tpl = template.trim().length > 0 ? template : "{{__timestamp}}";
+		const rendered = renderTemplate(tpl, ctx).trim();
+		return rendered.length > 0 ? `${rendered}.md` : "(empty)";
+	}
+
+	private async cloneType(schema: TypeSchema): Promise<void> {
+		const name = await promptForString(
+			this.plugin.app,
+			`Clone "${schema.name}"`,
+			"New type name"
+		);
+		if (!name) return;
+		if (this.plugin.loader.get(name)) {
+			new Notice(`Schema: type "${name}" already exists.`);
+			return;
+		}
+		const clone: TypeSchema = {
+			name,
+			extends: schema.extends,
+			folder: schema.folder,
+			filename: schema.filename,
+			bodyTemplate: schema.bodyTemplate,
+			tags: [...schema.tags],
+			fields: schema.fields.map((f) => ({ ...f, options: f.options ? { ...f.options } : undefined })),
+			lookups: schema.lookups.map((l) => ({ ...l })),
+			defaults: { ...schema.defaults },
+			version: schema.version,
+		};
+		this.plugin.loader.add(clone);
+		new Notice(`Schema: cloned "${schema.name}" → "${name}".`);
 	}
 
 	private queue(partial: Partial<TypeSchema>): void {

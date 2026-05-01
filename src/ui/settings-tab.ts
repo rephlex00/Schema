@@ -15,6 +15,7 @@ import { TypeEditor } from "./type-editor";
 export class SchemaSettingsTab extends PluginSettingTab {
 	private readonly plugin: SchemaPlugin;
 	private rerenderListener: (() => void) | null = null;
+	private filterText = "";
 
 	constructor(app: App, plugin: SchemaPlugin) {
 		super(app, plugin);
@@ -88,23 +89,33 @@ export class SchemaSettingsTab extends PluginSettingTab {
 	}
 
 	private renderTypes(parent: HTMLElement): void {
-		const types = this.plugin.loader
+		const allTypes = this.plugin.loader
 			.getAll()
 			.slice()
 			.sort((a, b) => a.name.localeCompare(b.name));
 
 		const heading = parent.createEl("div", { cls: "schema-types-heading" });
-		heading.createEl("h3", { text: `Types (${types.length})` });
+		heading.createEl("h3", { text: `Types (${allTypes.length})` });
 
-		new Setting(parent).addButton((btn) => {
-			btn.setButtonText("+ Add type")
-				.setCta()
-				.onClick(() => {
-					new AddTypeModal(this.plugin, () => this.display()).open();
+		// Filter input (case-insensitive, matches name + extends + folder)
+		new Setting(parent)
+			.setName("Filter")
+			.setDesc("Substring match across name, extends, and folder.")
+			.addText((t) => {
+				t.setPlaceholder("type to filter…").setValue(this.filterText).onChange((v) => {
+					this.filterText = v;
+					this.refreshTypeList();
 				});
-		});
+			})
+			.addButton((btn) => {
+				btn.setButtonText("+ Add type")
+					.setCta()
+					.onClick(() => {
+						new AddTypeModal(this.plugin, () => this.display()).open();
+					});
+			});
 
-		if (types.length === 0) {
+		if (allTypes.length === 0) {
 			parent.createEl("div", {
 				cls: "schema-empty",
 				text: "No types defined yet. Click '+ Add type' to start.",
@@ -112,9 +123,40 @@ export class SchemaSettingsTab extends PluginSettingTab {
 			return;
 		}
 
+		// Marked container so we can re-populate without re-rendering the whole tab.
 		const list = parent.createEl("div", { cls: "schema-types-list" });
-		for (const schema of types) {
+		this.populateTypeList(list);
+	}
+
+	/** (Re)populate the types list based on `this.filterText`. */
+	private populateTypeList(list: HTMLElement): void {
+		list.empty();
+		const allTypes = this.plugin.loader
+			.getAll()
+			.slice()
+			.sort((a, b) => a.name.localeCompare(b.name));
+		const q = this.filterText.trim().toLowerCase();
+		const filtered =
+			q.length === 0
+				? allTypes
+				: allTypes.filter((s) => {
+						const hay = `${s.name} ${s.extends ?? ""} ${s.folder ?? ""}`.toLowerCase();
+						return hay.includes(q);
+					});
+		if (filtered.length === 0) {
+			list.createEl("div", {
+				cls: "schema-empty",
+				text: `No types match "${this.filterText}".`,
+			});
+			return;
+		}
+		for (const schema of filtered) {
 			new TypeEditor(this.plugin, schema.name).render(list, false);
 		}
+	}
+
+	private refreshTypeList(): void {
+		const list = this.containerEl.querySelector(".schema-types-list");
+		if (list instanceof HTMLElement) this.populateTypeList(list);
 	}
 }
