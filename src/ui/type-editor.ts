@@ -15,6 +15,23 @@ function isHex(s: string): boolean {
 	return /^#[0-9A-Fa-f]{6}$/.test(s.trim());
 }
 
+/** Type-row action toolbar: just a delete button. Types can't be reordered
+ *  here (the list is tree-sorted by extends chain), so up/down don't apply.
+ *  Click is stopped from propagating so it doesn't toggle the details. */
+function buildTypeRowActions(summary: HTMLElement, onDelete: () => void): void {
+	const actions = summary.createSpan({ cls: "schema-row-actions" });
+	const btn = actions.createEl("button", {
+		cls: "schema-row-btn schema-row-btn-danger",
+		attr: { type: "button", "aria-label": "Delete type", title: "Delete type" },
+	});
+	setIcon(btn, "trash-2");
+	btn.addEventListener("click", (e) => {
+		e.preventDefault();
+		e.stopPropagation();
+		onDelete();
+	});
+}
+
 function isoWeekNumber(date: Date): number {
 	const target = new Date(date.valueOf());
 	const dayNr = (date.getDay() + 6) % 7;
@@ -63,6 +80,9 @@ export class TypeEditor {
 		const iconName = typeof schema.defaults?.icon === "string" ? schema.defaults.icon : "";
 		const color = typeof schema.defaults?.color === "string" ? schema.defaults.color : "";
 
+		const chevron = summary.createSpan({ cls: "schema-summary-chevron" });
+		setIcon(chevron, "chevron-right");
+
 		const chip = summary.createSpan({ cls: "schema-type-chip" });
 		if (color) chip.style.setProperty("--type-color", color);
 		if (iconName) {
@@ -81,6 +101,8 @@ export class TypeEditor {
 			cls: "schema-type-meta",
 			text: meta.join(" · "),
 		});
+
+		buildTypeRowActions(summary, () => void this.deleteSelf(schema));
 
 		const body = details.createEl("div", { cls: "schema-type-body" });
 		this.renderBasics(body, schema);
@@ -325,16 +347,18 @@ export class TypeEditor {
 			.addButton((btn) => {
 				btn.setButtonText("Delete type")
 					.setWarning()
-					.onClick(async () => {
-						const ok = await confirmAction(
-							this.plugin.app,
-							`Delete type "${schema.name}"? Existing notes with this type will keep their frontmatter but lose schema validation.`
-						);
-						if (!ok) return;
-						this.plugin.loader.remove(schema.name);
-						new Notice(`Schema: deleted type "${schema.name}".`);
-					});
+					.onClick(() => void this.deleteSelf(schema));
 			});
+	}
+
+	private async deleteSelf(schema: TypeSchema): Promise<void> {
+		const ok = await confirmAction(
+			this.plugin.app,
+			`Delete type "${schema.name}"? Existing notes with this type will keep their frontmatter but lose schema validation.`
+		);
+		if (!ok) return;
+		this.plugin.loader.remove(schema.name);
+		new Notice(`Schema: deleted type "${schema.name}".`);
 	}
 
 	/** Render the filename template with placeholder values for any prompted

@@ -79,6 +79,8 @@ export class FieldListEditor {
 		const row = parent.createEl("div", { cls: "schema-field-row" });
 		const details = row.createEl("details");
 		const summary = details.createEl("summary");
+		const chevron = summary.createSpan({ cls: "schema-summary-chevron" });
+		setIcon(chevron, "chevron-right");
 		const text = summary.createSpan({ cls: "schema-row-text" });
 		text.createEl("strong", { text: field.name });
 		text.createEl("span", {

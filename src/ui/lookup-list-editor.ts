@@ -1,4 +1,4 @@
-import { Notice, Setting } from "obsidian";
+import { Notice, Setting, setIcon } from "obsidian";
 import type SchemaPlugin from "../main";
 import type { LookupSchema } from "../schema/types";
 import { buildRowActions } from "./field-list-editor";
@@ -46,6 +46,8 @@ export class LookupListEditor {
 		const row = parent.createEl("div", { cls: "schema-lookup-row" });
 		const details = row.createEl("details");
 		const summary = details.createEl("summary");
+		const chevron = summary.createSpan({ cls: "schema-summary-chevron" });
+		setIcon(chevron, "chevron-right");
 		const text = summary.createSpan({ cls: "schema-row-text" });
 		text.createEl("strong", { text: lookup.name });
 		text.createEl("span", {

@@ -1,5 +1,57 @@
 /* Schema plugin styles */
 
+/* Tab bar at the top of the settings pane. */
+.schema-tab-bar {
+  display: flex;
+  gap: 2px;
+  margin: 8px 0 16px 0;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.schema-tab-btn {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 8px 14px;
+  margin-bottom: -1px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.schema-tab-btn:hover {
+  color: var(--text-normal);
+  background: var(--background-modifier-hover);
+}
+
+.schema-tab-btn.active {
+  color: var(--text-normal);
+  border-bottom-color: var(--interactive-accent);
+}
+
+.schema-tab-body {
+  margin-top: 8px;
+}
+
+.schema-validation-banner {
+  margin: 8px 0 16px 0;
+  padding: 8px 12px;
+  border: 1px solid var(--background-modifier-border);
+  border-left: 3px solid var(--text-error);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--text-error) 6%, var(--background-primary));
+}
+
+.schema-validation-banner strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+
+
 /* Type header banner — subtle strip at the top of typed-note views */
 .schema-type-banner {
   display: flex;
@@ -97,6 +149,37 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  list-style: none;
+}
+
+.schema-type-block summary::-webkit-details-marker,
+.schema-field-row summary::-webkit-details-marker,
+.schema-lookup-row summary::-webkit-details-marker {
+  display: none;
+}
+
+.schema-field-row summary,
+.schema-lookup-row summary {
+  list-style: none;
+}
+
+/* Rotating chevron next to the chip / row name. Defaults to pointing right
+ * (collapsed); rotates to pointing down when the parent <details> is open. */
+.schema-summary-chevron {
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-muted);
+  transition: transform 0.12s ease-out;
+  flex-shrink: 0;
+}
+
+.schema-summary-chevron svg {
+  width: 14px;
+  height: 14px;
+}
+
+details[open] > summary > .schema-summary-chevron {
+  transform: rotate(90deg);
 }
 
 .schema-type-block[open] summary {
@@ -506,6 +589,60 @@
   background: var(--background-primary);
   color: var(--text-normal);
   font-size: 13px;
+}
+
+/* Chip overlay rendered by TypeChipPropertyManager on top of the `type:`
+ * property value cell in the properties pane. The underlying value text/input
+ * stays in place so editing still works — the chip just covers it visually
+ * when the cell is not focused. */
+.schema-has-type-chip {
+  position: relative;
+}
+
+.schema-has-type-chip > :not(.schema-type-property-chip) {
+  visibility: hidden;
+}
+
+.schema-has-type-chip:focus-within > :not(.schema-type-property-chip) {
+  visibility: visible;
+}
+
+.schema-has-type-chip:focus-within > .schema-type-property-chip {
+  display: none;
+}
+
+.schema-type-property-chip {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--type-color, var(--text-muted)) 14%, var(--background-primary));
+  color: var(--type-color, var(--text-normal));
+  border: 1px solid color-mix(in srgb, var(--type-color, var(--text-muted)) 28%, transparent);
+  font-weight: 600;
+  font-size: 13px;
+  pointer-events: none;
+  user-select: none;
+  z-index: 1;
+}
+
+.schema-type-property-chip .schema-type-icon {
+  display: inline-flex;
+  align-items: center;
+}
+
+.schema-type-property-chip .schema-type-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.schema-type-property-chip .schema-type-name {
+  letter-spacing: 0.02em;
 }
 
 /* Lookup block (live-rendered code blocks) */

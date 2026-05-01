@@ -15,6 +15,7 @@ import { FieldPickerModal } from "./ui/field-edit-modal";
 import { QueryPlaygroundModal } from "./ui/query-playground";
 import { SchemaSettingsTab } from "./ui/settings-tab";
 import { TypeBannerManager } from "./ui/type-banner";
+import { TypeChipPropertyManager } from "./ui/type-chip-property";
 import { TypedWikilinkSuggest } from "./ui/typed-wikilink-suggest";
 
 /** Kind controls which widget renders in each type's Defaults section. */
@@ -41,6 +42,11 @@ export interface SchemaSettings {
 	folderMappings: Record<string, string>;
 	/** Master toggle for the folder→type auto-classification behavior. */
 	autoClassifyOnFolderMatch: boolean;
+	/** Show the subtle horizontal type banner at the top of typed-note views. */
+	showTypeBanner: boolean;
+	/** Replace the `type:` property's plain-text value in the note's properties
+	 *  pane with a colored chip mirroring the settings-tab styling. */
+	replaceTypePropertyWithChip: boolean;
 }
 
 const DEFAULT_SETTINGS: SchemaSettings = {
@@ -52,6 +58,8 @@ const DEFAULT_SETTINGS: SchemaSettings = {
 	autoReshelveOnTypeChange: true,
 	folderMappings: {},
 	autoClassifyOnFolderMatch: true,
+	showTypeBanner: true,
+	replaceTypePropertyWithChip: true,
 };
 
 export default class SchemaPlugin extends Plugin {
@@ -63,6 +71,7 @@ export default class SchemaPlugin extends Plugin {
 	lookups!: LookupEngine;
 	fmLookupRenderer!: FrontmatterLookupRenderer;
 	typeBanner!: TypeBannerManager;
+	typeChipProperty!: TypeChipPropertyManager;
 	/** Shared "currently being mutated by a watcher" set. Both TypeChangeWatcher
 	 *  and FolderMappingWatcher add the file path here while writing, so the
 	 *  other watcher's listener no-ops on its own write. */
@@ -78,6 +87,7 @@ export default class SchemaPlugin extends Plugin {
 		this.lookups = new LookupEngine(this.app);
 		this.fmLookupRenderer = new FrontmatterLookupRenderer(this);
 		this.typeBanner = new TypeBannerManager(this);
+		this.typeChipProperty = new TypeChipPropertyManager(this);
 
 		registerBlockRenderer(this);
 
@@ -101,7 +111,8 @@ export default class SchemaPlugin extends Plugin {
 			this.typeWatcher.start();
 			this.folderWatcher.start();
 			this.fmLookupRenderer.start();
-			this.typeBanner.start();
+			if (this.settings.showTypeBanner) this.typeBanner.start();
+			if (this.settings.replaceTypePropertyWithChip) this.typeChipProperty.start();
 			console.log(
 				`[schema] lookup runtime: ${this.lookups.usingDataview() ? "dataview" : "builtin"}`
 			);
@@ -193,6 +204,7 @@ export default class SchemaPlugin extends Plugin {
 		this.typeWatcher?.stop();
 		this.folderWatcher?.stop();
 		this.typeBanner?.stop();
+		this.typeChipProperty?.stop();
 		this.loader?.stop();
 		console.log("[schema] Plugin unloaded.");
 	}

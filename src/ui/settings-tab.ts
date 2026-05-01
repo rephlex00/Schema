@@ -5,9 +5,23 @@ import { AutoRefreshedFieldsEditor } from "./auto-refreshed-fields-editor";
 import { FolderMappingsEditor } from "./folder-mappings-editor";
 import { TypeEditor } from "./type-editor";
 
+type TabId = "global" | "objects" | "appearance";
+
+interface TabDef {
+	id: TabId;
+	label: string;
+}
+
+const TABS: TabDef[] = [
+	{ id: "global", label: "Global" },
+	{ id: "objects", label: "Objects" },
+	{ id: "appearance", label: "Appearance" },
+];
+
 /**
- * Top-level Settings → Schema tab. Renders global toggles, validation issues,
- * the type list, and an "Add type" button.
+ * Top-level Settings → Schema tab. Renders a tab bar at the top and the
+ * active tab's content below. Validation issues, when present, render at the
+ * top of every tab so they're never missed.
  *
  * Re-renders when the loader emits `schema-changed` (via plugin re-display),
  * so edits made via the loader's API show up immediately.
@@ -16,6 +30,7 @@ export class SchemaSettingsTab extends PluginSettingTab {
 	private readonly plugin: SchemaPlugin;
 	private rerenderListener: (() => void) | null = null;
 	private filterText = "";
+	private activeTab: TabId = "objects";
 
 	constructor(app: App, plugin: SchemaPlugin) {
 		super(app, plugin);
@@ -27,11 +42,22 @@ export class SchemaSettingsTab extends PluginSettingTab {
 		containerEl.empty();
 		containerEl.createEl("h2", { text: "Schema" });
 
-		this.renderGlobal(containerEl);
+		this.renderTabBar(containerEl);
 		this.renderValidation(containerEl);
-		this.renderTypes(containerEl);
 
-		// Wire up live re-render on schema-changed.
+		const body = containerEl.createDiv({ cls: "schema-tab-body" });
+		switch (this.activeTab) {
+			case "global":
+				this.renderGlobal(body);
+				break;
+			case "objects":
+				this.renderTypes(body);
+				break;
+			case "appearance":
+				this.renderAppearance(body);
+				break;
+		}
+
 		this.detachRerenderListener();
 		this.rerenderListener = () => this.display();
 		this.plugin.loader.on("schema-changed", this.rerenderListener);
@@ -48,9 +74,23 @@ export class SchemaSettingsTab extends PluginSettingTab {
 		}
 	}
 
-	private renderGlobal(parent: HTMLElement): void {
-		parent.createEl("h3", { text: "Global" });
+	private renderTabBar(parent: HTMLElement): void {
+		const bar = parent.createDiv({ cls: "schema-tab-bar" });
+		for (const tab of TABS) {
+			const btn = bar.createEl("button", {
+				cls: `schema-tab-btn${this.activeTab === tab.id ? " active" : ""}`,
+				text: tab.label,
+				attr: { type: "button" },
+			});
+			btn.addEventListener("click", () => {
+				if (this.activeTab === tab.id) return;
+				this.activeTab = tab.id;
+				this.display();
+			});
+		}
+	}
 
+	private renderGlobal(parent: HTMLElement): void {
 		new Setting(parent)
 			.setName("Auto-reshelve on type change")
 			.setDesc(
@@ -65,6 +105,20 @@ export class SchemaSettingsTab extends PluginSettingTab {
 					});
 			});
 
+		new Setting(parent)
+			.setName("Auto-classify on folder match")
+			.setDesc(
+				"When a file is created or moved into a mapped folder, set its `type:` to that folder's type."
+			)
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.autoClassifyOnFolderMatch)
+					.onChange(async (value) => {
+						this.plugin.settings.autoClassifyOnFolderMatch = value;
+						await this.plugin.saveSettings();
+					});
+			});
+
 		parent.createEl("h4", { text: "Auto-refreshed frontmatter fields" });
 		new AutoRefreshedFieldsEditor(this.plugin, () => this.display()).render(parent);
 
@@ -75,14 +129,51 @@ export class SchemaSettingsTab extends PluginSettingTab {
 		new Setting(parent).setName("Lookup runtime").setDesc(runtime).setDisabled(true);
 	}
 
+	private renderAppearance(parent: HTMLElement): void {
+		new Setting(parent)
+			.setName("Show type banner")
+			.setDesc(
+				"Render a subtle horizontal banner at the top of typed-note views showing the type's icon, name, and folder."
+			)
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.showTypeBanner)
+					.onChange(async (value) => {
+						this.plugin.settings.showTypeBanner = value;
+						await this.plugin.saveSettings();
+						if (value) this.plugin.typeBanner.start();
+						else this.plugin.typeBanner.stop();
+					});
+			});
+
+		new Setting(parent)
+			.setName("Replace type property with chip")
+			.setDesc(
+				"In the note's properties pane, overlay a colored chip on top of the `type:` value (mirroring the settings tab styling). Editing still works — the chip hides when the cell is focused."
+			)
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.replaceTypePropertyWithChip)
+					.onChange(async (value) => {
+						this.plugin.settings.replaceTypePropertyWithChip = value;
+						await this.plugin.saveSettings();
+						if (value) this.plugin.typeChipProperty.start();
+						else this.plugin.typeChipProperty.stop();
+					});
+			});
+	}
+
 	private renderValidation(parent: HTMLElement): void {
 		const errs = this.plugin.loader.getValidationErrors();
 		const errors = errs.filter((e) => e.level === "error");
 		const warnings = errs.filter((e) => e.level === "warning");
 		if (errors.length === 0 && warnings.length === 0) return;
 
-		parent.createEl("h3", { text: "Validation issues" });
-		const ul = parent.createEl("ul", { cls: "schema-validation-list" });
+		const wrap = parent.createDiv({ cls: "schema-validation-banner" });
+		wrap.createEl("strong", {
+			text: `Validation: ${errors.length} error${errors.length === 1 ? "" : "s"}, ${warnings.length} warning${warnings.length === 1 ? "" : "s"}`,
+		});
+		const ul = wrap.createEl("ul", { cls: "schema-validation-list" });
 		for (const e of [...errors, ...warnings]) {
 			ul.createEl("li", { text: `[${e.level}] ${e.type}: ${e.message}` });
 		}
@@ -97,7 +188,6 @@ export class SchemaSettingsTab extends PluginSettingTab {
 		const heading = parent.createEl("div", { cls: "schema-types-heading" });
 		heading.createEl("h3", { text: `Types (${allTypes.length})` });
 
-		// Filter input (case-insensitive, matches name + extends + folder)
 		new Setting(parent)
 			.setName("Filter")
 			.setDesc("Substring match across name, extends, and folder.")
@@ -123,7 +213,6 @@ export class SchemaSettingsTab extends PluginSettingTab {
 			return;
 		}
 
-		// Marked container so we can re-populate without re-rendering the whole tab.
 		const list = parent.createEl("div", { cls: "schema-types-list" });
 		this.populateTypeList(list);
 	}
@@ -144,8 +233,6 @@ export class SchemaSettingsTab extends PluginSettingTab {
 			return hay.includes(q);
 		};
 
-		// Compute the visible set: any matched type plus every ancestor in
-		// its extends-chain (so the tree position stays intact).
 		const visible = new Set<string>();
 		for (const t of allTypes) {
 			if (!matches(t)) continue;
@@ -166,7 +253,6 @@ export class SchemaSettingsTab extends PluginSettingTab {
 			return;
 		}
 
-		// Group children by parent name.
 		const childrenOf = new Map<string, string[]>();
 		const roots: string[] = [];
 		for (const t of allTypes) {
