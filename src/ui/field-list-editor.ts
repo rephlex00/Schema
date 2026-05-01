@@ -124,6 +124,18 @@ export class FieldListEditor {
 							this.queueFieldUpdate(index, { target: v || undefined });
 						});
 					});
+				new Setting(parent)
+					.setName("Inverse lookup name")
+					.setDesc(
+						"If set, the target type gets a reverse lookup synthesized automatically. Leave blank for one-way."
+					)
+					.addText((t) => {
+						t.setValue(field.inverse ?? "")
+							.setPlaceholder("e.g. moments_with_me")
+							.onChange((v) => {
+								this.queueFieldUpdate(index, { inverse: v.trim() || undefined });
+							});
+					});
 				return;
 			}
 			case "Formula": {

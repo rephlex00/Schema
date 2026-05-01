@@ -60,6 +60,9 @@ export interface FieldSchema {
 	promptOnCreate?: string;
 	/** For File/MultiFile: constrain picker to instances of this type. */
 	target?: string;
+	/** For File/MultiFile with `target` set: name of the auto-generated reverse
+	 *  lookup synthesized on the target type. Leave blank for one-way links. */
+	inverse?: string;
 	/** Type-specific options (e.g. valuesListNotePath / valuesList for Select). */
 	options?: Record<string, unknown>;
 }

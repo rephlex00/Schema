@@ -1,6 +1,10 @@
 import { Notice, Setting, setIcon } from "obsidian";
 import type SchemaPlugin from "../main";
-import { inheritedFieldNames, inheritedLookupNames } from "../schema/resolve";
+import {
+	inheritedFieldNames,
+	inheritedLookupNames,
+	synthesizedInverseLookups,
+} from "../schema/resolve";
 import type { TypeSchema } from "../schema/types";
 import { renderTemplate } from "../util/liquid";
 import { FieldListEditor } from "./field-list-editor";
@@ -258,6 +262,16 @@ export class TypeEditor {
 			parent.createEl("div", {
 				cls: "schema-inheritance-hint",
 				text: `+ inherited from ${schema.extends}: ${inherited.join(", ")}`,
+			});
+		}
+		const synthesized = synthesizedInverseLookups(this.plugin.loader.rawMap(), schema.name);
+		if (synthesized.length > 0) {
+			const grouped = synthesized
+				.map((s) => `${s.name} (← ${s.sourceType})`)
+				.join(", ");
+			parent.createEl("div", {
+				cls: "schema-inheritance-hint",
+				text: `+ inverse: ${grouped}`,
 			});
 		}
 		new LookupListEditor(this.plugin, schema.name).render(parent);

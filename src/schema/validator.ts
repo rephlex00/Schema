@@ -86,6 +86,49 @@ export function validateAll(schemas: Map<string, TypeSchema>): ValidationResult 
 					message: `field "${f.name}" targets "${f.target}" which is not a defined type`,
 				});
 			}
+			if (f.inverse && (!f.target || !schemas.has(f.target))) {
+				errors.push({
+					type: schema.name,
+					level: "warning",
+					message: `field "${f.name}" has inverse "${f.inverse}" but target "${f.target ?? "(unset)"}" is not a defined type — synthesis will be skipped`,
+				});
+			}
+		}
+	}
+
+	// Detect inverse-name collisions on the SAME target across different sources.
+	const inverseClaims = new Map<string, string[]>(); // key: `${target}::${inverseName}` → source type names
+	for (const schema of schemas.values()) {
+		for (const f of schema.fields) {
+			if (!f.inverse || !f.target || !schemas.has(f.target)) continue;
+			const key = `${f.target}::${f.inverse}`;
+			const claimers = inverseClaims.get(key) ?? [];
+			claimers.push(schema.name);
+			inverseClaims.set(key, claimers);
+		}
+	}
+	for (const [key, claimers] of inverseClaims) {
+		if (claimers.length > 1) {
+			const [target, inverseName] = key.split("::");
+			errors.push({
+				type: target,
+				level: "error",
+				message: `multiple types claim inverse "${inverseName}" on "${target}": ${claimers.join(", ")} — only one will be synthesized`,
+			});
+		}
+	}
+
+	// Warn when synthesized inverse name collides with a manual lookup on the target.
+	for (const [key, claimers] of inverseClaims) {
+		const [target, inverseName] = key.split("::");
+		const targetSchema = schemas.get(target);
+		if (!targetSchema) continue;
+		if (targetSchema.lookups.some((l) => l.name === inverseName)) {
+			errors.push({
+				type: target,
+				level: "warning",
+				message: `manual lookup "${inverseName}" shadows the inverse synthesized by ${claimers.join(", ")}`,
+			});
 		}
 	}
 

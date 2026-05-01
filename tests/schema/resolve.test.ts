@@ -5,6 +5,7 @@ import {
 	inheritedLookupNames,
 	resolveAll,
 	resolveSchema,
+	synthesizedInverseLookups,
 } from "../../src/schema/resolve";
 import type { TypeSchema } from "../../src/schema/types";
 
@@ -219,5 +220,139 @@ describe("resolveAll", () => {
 		expect(all).toHaveLength(2);
 		const person = all.find((x) => x.name === "person")!;
 		expect(person.fields.map((f) => f.name)).toEqual(["title"]);
+	});
+});
+
+describe("inverse-relationship synthesis", () => {
+	it("synthesizes a reverse lookup on the target type for a MultiFile field", () => {
+		const map = mapOf(
+			s({ name: "person", folder: "Facts/People" }),
+			s({
+				name: "event",
+				folder: "Moments",
+				fields: [
+					{ name: "people", type: "MultiFile", target: "person", inverse: "events_attended" },
+				],
+			})
+		);
+		const person = resolveSchema(map, "person")!;
+		const synth = person.lookups.find((l) => l.name === "events_attended");
+		expect(synth).toBeDefined();
+		expect(synth!.query).toContain('dv.pages(\'"Moments"\')');
+		expect(synth!.query).toContain('s.type === "event"');
+		expect(synth!.query).toContain("s.people && s.people.some");
+		expect(synth!.render).toBe("frontmatter");
+	});
+
+	it("uses single-link predicate for File-typed fields", () => {
+		const map = mapOf(
+			s({ name: "place", folder: "Facts/Places" }),
+			s({
+				name: "event",
+				folder: "Moments",
+				fields: [{ name: "place", type: "File", target: "place", inverse: "events_here" }],
+			})
+		);
+		const place = resolveSchema(map, "place")!;
+		const synth = place.lookups.find((l) => l.name === "events_here")!;
+		expect(synth.query).toContain("s.place && s.place.path === current.file.path");
+		expect(synth.query).not.toContain(".some(");
+	});
+
+	it("strips template segments from source folder", () => {
+		const map = mapOf(
+			s({ name: "person" }),
+			s({
+				name: "event",
+				folder: "Moments/{{__year}}",
+				fields: [
+					{ name: "people", type: "MultiFile", target: "person", inverse: "events_with_me" },
+				],
+			})
+		);
+		const person = resolveSchema(map, "person")!;
+		const synth = person.lookups.find((l) => l.name === "events_with_me")!;
+		expect(synth.query).toContain('dv.pages(\'"Moments"\')');
+	});
+
+	it("does not synthesize when target is unknown", () => {
+		const map = mapOf(
+			s({
+				name: "event",
+				folder: "Moments",
+				fields: [
+					{ name: "ghost_field", type: "MultiFile", target: "ghost", inverse: "ghost_inverse" },
+				],
+			})
+		);
+		// Resolve a real type — synthesis only fires when target matches.
+		const event = resolveSchema(map, "event")!;
+		expect(event.lookups.some((l) => l.name === "ghost_inverse")).toBe(false);
+	});
+
+	it("manual lookup with the same name wins over synthesis", () => {
+		const map = mapOf(
+			s({
+				name: "person",
+				lookups: [
+					{
+						name: "events_attended",
+						query: "MANUAL_QUERY",
+						render: "block",
+						output: "count",
+					},
+				],
+			}),
+			s({
+				name: "event",
+				folder: "Moments",
+				fields: [
+					{ name: "people", type: "MultiFile", target: "person", inverse: "events_attended" },
+				],
+			})
+		);
+		const person = resolveSchema(map, "person")!;
+		const matches = person.lookups.filter((l) => l.name === "events_attended");
+		expect(matches).toHaveLength(1);
+		expect(matches[0]!.query).toBe("MANUAL_QUERY");
+	});
+
+	it("when two sources claim the same inverse, only one wins (validator flags)", () => {
+		const map = mapOf(
+			s({ name: "person" }),
+			s({
+				name: "event",
+				folder: "Moments",
+				fields: [{ name: "people", type: "MultiFile", target: "person", inverse: "shared" }],
+			}),
+			s({
+				name: "journal",
+				folder: "Moments",
+				fields: [{ name: "people", type: "MultiFile", target: "person", inverse: "shared" }],
+			})
+		);
+		const person = resolveSchema(map, "person")!;
+		const matches = person.lookups.filter((l) => l.name === "shared");
+		expect(matches).toHaveLength(1);
+	});
+});
+
+describe("synthesizedInverseLookups", () => {
+	it("returns names with their source types", () => {
+		const map = mapOf(
+			s({ name: "person" }),
+			s({
+				name: "event",
+				folder: "Moments",
+				fields: [{ name: "people", type: "MultiFile", target: "person", inverse: "moments_with_me" }],
+			})
+		);
+		const list = synthesizedInverseLookups(map, "person");
+		expect(list).toEqual([{ name: "moments_with_me", sourceType: "event" }]);
+	});
+
+	it("returns empty for types without inverse declarations pointing at them", () => {
+		const map = mapOf(s({ name: "person" }), s({ name: "event", folder: "Moments" }));
+		expect(synthesizedInverseLookups(map, "person")).toEqual([]);
 	});
 });

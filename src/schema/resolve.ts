@@ -1,3 +1,4 @@
+import { stripTemplateSegments } from "../util/folder";
 import type { FieldSchema, LookupSchema, TypeSchema } from "./types";
 
 /**
@@ -22,13 +23,96 @@ export function resolveSchema(
 	schemas: Map<string, TypeSchema>,
 	name: string
 ): TypeSchema | undefined {
-	return resolveInner(schemas, name, new Set());
+	const merged = resolveInner(schemas, name, new Set());
+	if (!merged) return undefined;
+	return appendInverseLookups(schemas, merged);
 }
 
 export function resolveAll(schemas: Map<string, TypeSchema>): TypeSchema[] {
 	return Array.from(schemas.keys())
 		.map((n) => resolveSchema(schemas, n))
 		.filter((s): s is TypeSchema => s != null);
+}
+
+/** Names of inverse lookups synthesized for a target type, with the source
+ *  type each came from. Used by the Settings UI's inheritance hint. */
+export function synthesizedInverseLookups(
+	schemas: Map<string, TypeSchema>,
+	targetName: string
+): Array<{ name: string; sourceType: string }> {
+	const out: Array<{ name: string; sourceType: string }> = [];
+	for (const source of schemas.values()) {
+		if (source.name === targetName) continue;
+		for (const f of source.fields) {
+			if (f.target === targetName && f.inverse && f.inverse.trim().length > 0) {
+				out.push({ name: f.inverse, sourceType: source.name });
+			}
+		}
+	}
+	return out;
+}
+
+/**
+ * Append synthesized inverse lookups to an already-merged schema. Manually-
+ * defined lookups (in `merged.lookups`) win on name collision; we just skip
+ * synthesis for those names.
+ */
+function appendInverseLookups(
+	schemas: Map<string, TypeSchema>,
+	merged: TypeSchema
+): TypeSchema {
+	const existingNames = new Set(merged.lookups.map((l) => l.name));
+	const additions: LookupSchema[] = [];
+	const seenInverseNames = new Set<string>();
+
+	for (const source of schemas.values()) {
+		if (source.name === merged.name) continue; // skip self
+		for (const f of source.fields) {
+			if (f.target !== merged.name) continue;
+			if (!f.inverse || f.inverse.trim().length === 0) continue;
+			const inverseName = f.inverse;
+			if (existingNames.has(inverseName)) continue; // manual wins
+			if (seenInverseNames.has(inverseName)) continue; // collision — skip duplicates; validator flags
+			seenInverseNames.add(inverseName);
+			additions.push(makeInverseLookup(source, f, inverseName));
+		}
+	}
+
+	if (additions.length === 0) return merged;
+	return {
+		...merged,
+		lookups: [...merged.lookups, ...additions],
+	};
+}
+
+/** Synthesize the Dataview JS query string + LookupSchema for one inverse pair. */
+function makeInverseLookup(
+	source: TypeSchema,
+	field: FieldSchema,
+	inverseName: string
+): LookupSchema {
+	const folder = stripTemplateSegments(source.folder);
+	const folderArg = folder.length > 0 ? `'"${folder}"'` : "";
+	const typeFilter = `s.type === ${JSON.stringify(source.name)}`;
+	const fieldName = field.name;
+
+	let predicate: string;
+	if (field.type === "MultiFile" || field.type === "Multi" || field.type === "MultiMedia") {
+		predicate = `s.${fieldName} && s.${fieldName}.some(p => p.path === current.file.path)`;
+	} else {
+		// File / Media / Cycle / Select / etc — treat as single-link
+		predicate = `s.${fieldName} && s.${fieldName}.path === current.file.path`;
+	}
+
+	const query = `dv.pages(${folderArg}).filter(s => ${typeFilter} && ${predicate})`;
+
+	return {
+		name: inverseName,
+		query,
+		render: "frontmatter",
+		output: "list",
+		autoUpdate: true,
+	};
 }
 
 /** Detect cycles in the extends chain. Returns the cycle path if found, else null. */
