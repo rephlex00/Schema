@@ -1,6 +1,7 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
 import type SchemaPlugin from "../main";
 import { AddTypeModal } from "./add-type-modal";
+import { AutoRefreshedFieldsEditor } from "./auto-refreshed-fields-editor";
 import { TypeEditor } from "./type-editor";
 
 /**
@@ -62,22 +63,8 @@ export class SchemaSettingsTab extends PluginSettingTab {
 					});
 			});
 
-		new Setting(parent)
-			.setName("Auto-refreshed frontmatter fields")
-			.setDesc(
-				"Comma-separated list of frontmatter keys that get reset to schema defaults on every type change."
-			)
-			.addText((text) => {
-				text.setValue(this.plugin.settings.autoRefreshedFields.join(", ")).onChange(
-					async (value) => {
-						this.plugin.settings.autoRefreshedFields = value
-							.split(",")
-							.map((s) => s.trim())
-							.filter(Boolean);
-						await this.plugin.saveSettings();
-					}
-				);
-			});
+		parent.createEl("h4", { text: "Auto-refreshed frontmatter fields" });
+		new AutoRefreshedFieldsEditor(this.plugin, () => this.display()).render(parent);
 
 		const runtime = this.plugin.lookups.usingDataview() ? "Dataview (installed)" : "Built-in fallback";
 		new Setting(parent).setName("Lookup runtime").setDesc(runtime).setDisabled(true);

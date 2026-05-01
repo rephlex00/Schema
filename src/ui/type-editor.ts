@@ -4,6 +4,10 @@ import type { TypeSchema } from "../schema/types";
 import { FieldListEditor } from "./field-list-editor";
 import { LookupListEditor } from "./lookup-list-editor";
 
+function isHex(s: string): boolean {
+	return /^#[0-9A-Fa-f]{6}$/.test(s.trim());
+}
+
 /**
  * Renders one type's collapsible editor block. Provides Basics and Defaults
  * sub-sections (and stubs for Fields/Lookups, filled in by later phases).
@@ -121,23 +125,82 @@ export class TypeEditor {
 		if (fields.length === 0) {
 			parent.createEl("div", {
 				cls: "schema-empty",
-				text: "(no auto-refreshed fields configured globally)",
+				text: "(no auto-refreshed fields configured globally — see Settings → Schema → Global)",
 			});
 			return;
 		}
 
-		for (const key of fields) {
-			const current = schema.defaults?.[key];
+		for (const ar of fields) {
+			const current = schema.defaults?.[ar.name];
 			const value = typeof current === "string" ? current : current != null ? String(current) : "";
-			new Setting(parent).setName(key).addText((t) => {
-				t.setValue(value).onChange((v) => {
-					const next = { ...(schema.defaults ?? {}) };
-					if (v.trim() === "") delete next[key];
-					else next[key] = v;
-					this.queue({ defaults: next });
-				});
-			});
+			const setting = new Setting(parent).setName(ar.name);
+			switch (ar.kind) {
+				case "color":
+					this.renderColorPicker(setting, value, (v) => this.queueDefault(schema, ar.name, v));
+					break;
+				case "icon":
+					this.renderIconInput(setting, value, (v) => this.queueDefault(schema, ar.name, v));
+					break;
+				default:
+					setting.addText((t) => {
+						t.setValue(value).onChange((v) => this.queueDefault(schema, ar.name, v));
+					});
+					break;
+			}
 		}
+	}
+
+	private queueDefault(schema: TypeSchema, key: string, value: string): void {
+		const next = { ...(schema.defaults ?? {}) };
+		if (value.trim() === "") delete next[key];
+		else next[key] = value;
+		this.queue({ defaults: next });
+	}
+
+	private renderColorPicker(setting: Setting, current: string, onChange: (v: string) => void): void {
+		const wrap = setting.controlEl.createDiv({ cls: "schema-color-control" });
+
+		const swatch = wrap.createEl("input", {
+			type: "color",
+			cls: "schema-color-swatch",
+		});
+		swatch.value = isHex(current) ? current : "#888888";
+
+		const text = wrap.createEl("input", {
+			type: "text",
+			cls: "schema-color-text",
+		});
+		text.value = current;
+		text.placeholder = "#RRGGBB";
+
+		swatch.addEventListener("input", () => {
+			text.value = swatch.value;
+			onChange(swatch.value);
+		});
+		text.addEventListener("change", () => {
+			const v = text.value.trim();
+			if (isHex(v)) swatch.value = v;
+			onChange(v);
+		});
+	}
+
+	private renderIconInput(setting: Setting, current: string, onChange: (v: string) => void): void {
+		const wrap = setting.controlEl.createDiv({ cls: "schema-icon-control" });
+		const preview = wrap.createSpan({ cls: "schema-icon-preview" });
+		if (current) setIcon(preview, current);
+
+		const input = wrap.createEl("input", {
+			type: "text",
+			cls: "schema-icon-text",
+		});
+		input.value = current;
+		input.placeholder = "lucide icon name (e.g. user)";
+
+		input.addEventListener("input", () => {
+			preview.empty();
+			if (input.value) setIcon(preview, input.value);
+		});
+		input.addEventListener("change", () => onChange(input.value.trim()));
 	}
 
 	private renderFields(parent: HTMLElement, schema: TypeSchema): void {

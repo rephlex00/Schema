@@ -1,4 +1,5 @@
 import { App, TFile } from "obsidian";
+import type { AutoRefreshedField } from "../main";
 import type { FieldSchema, TypeSchema } from "../schema/types";
 
 const UNIVERSAL_KEYS = new Set(["type", "title", "summary", "aliases"]);
@@ -10,7 +11,7 @@ const UNIVERSAL_KEYS = new Set(["type", "title", "summary", "aliases"]);
  * render: frontmatter, and the auto-refreshed fields (icon/color and any
  * user-added).
  */
-export function allowedKeys(schema: TypeSchema, autoRefreshedFields: string[]): Set<string> {
+export function allowedKeys(schema: TypeSchema, autoRefreshedFields: AutoRefreshedField[]): Set<string> {
 	const keys = new Set<string>(UNIVERSAL_KEYS);
 	for (const f of schema.fields) {
 		keys.add(f.name);
@@ -20,7 +21,7 @@ export function allowedKeys(schema: TypeSchema, autoRefreshedFields: string[]): 
 			keys.add(lookup.name);
 		}
 	}
-	for (const k of autoRefreshedFields) keys.add(k);
+	for (const ar of autoRefreshedFields) keys.add(ar.name);
 	return keys;
 }
 
@@ -41,7 +42,7 @@ export async function cleanFrontmatter(
 	app: App,
 	file: TFile,
 	schema: TypeSchema,
-	autoRefreshedFields: string[]
+	autoRefreshedFields: AutoRefreshedField[]
 ): Promise<{ removed: string[]; added: string[] }> {
 	const removed: string[] = [];
 	const added: string[] = [];
@@ -67,9 +68,9 @@ export async function cleanFrontmatter(
 		// from an old type would be misleading.
 		fm.type = schema.name;
 		const defaults = schema.defaults ?? {};
-		for (const key of autoRefreshedFields) {
-			const v = defaults[key];
-			if (v !== undefined && v !== "") fm[key] = v;
+		for (const ar of autoRefreshedFields) {
+			const v = defaults[ar.name];
+			if (v !== undefined && v !== "") fm[ar.name] = v;
 		}
 	});
 

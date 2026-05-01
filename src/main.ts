@@ -11,19 +11,32 @@ import type { TypeSchema } from "./schema/types";
 import { FieldPickerModal } from "./ui/field-edit-modal";
 import { SchemaSettingsTab } from "./ui/settings-tab";
 
+/** Kind controls which widget renders in each type's Defaults section. */
+export type AutoRefreshedFieldKind = "text" | "color" | "icon";
+
+export interface AutoRefreshedField {
+	/** Frontmatter key name. */
+	name: string;
+	/** Widget kind for the per-type Defaults editor. */
+	kind: AutoRefreshedFieldKind;
+}
+
 export interface SchemaSettings {
 	/** All registered type schemas. The Settings tab is the canonical editor. */
 	schemas: TypeSchema[];
 	/** Frontmatter keys (e.g. icon, color) that get reset to schema.defaults
 	 *  values whenever a note's type changes. */
-	autoRefreshedFields: string[];
+	autoRefreshedFields: AutoRefreshedField[];
 	/** Auto-reshelve a file when its `type:` frontmatter changes. */
 	autoReshelveOnTypeChange: boolean;
 }
 
 const DEFAULT_SETTINGS: SchemaSettings = {
 	schemas: [],
-	autoRefreshedFields: ["icon", "color"],
+	autoRefreshedFields: [
+		{ name: "icon", kind: "icon" },
+		{ name: "color", kind: "color" },
+	],
 	autoReshelveOnTypeChange: true,
 };
 
@@ -179,7 +192,23 @@ export default class SchemaPlugin extends Plugin {
 	}
 
 	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		const loaded = (await this.loadData()) ?? {};
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, loaded);
+		this.migrateAutoRefreshedFields();
+	}
+
+	private migrateAutoRefreshedFields(): void {
+		const arr = this.settings.autoRefreshedFields as unknown[];
+		if (!Array.isArray(arr) || arr.length === 0) return;
+		// If the first element is a string, this is the v2.0 shape — convert.
+		if (typeof arr[0] === "string") {
+			this.settings.autoRefreshedFields = (arr as string[]).map((name) => ({
+				name,
+				kind:
+					name === "color" ? "color" : name === "icon" ? "icon" : "text",
+			}));
+			void this.saveSettings();
+		}
 	}
 
 	async saveSettings() {

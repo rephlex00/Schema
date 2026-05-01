@@ -112,6 +112,121 @@
   margin-top: 8px;
 }
 
+/* Auto-refreshed fields list (global config) */
+.schema-auto-refreshed-editor {
+  margin-bottom: 18px;
+}
+
+.schema-arf-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 8px 0;
+}
+
+.schema-arf-row {
+  display: grid;
+  grid-template-columns: 1fr 110px auto auto auto;
+  gap: 6px;
+  align-items: center;
+}
+
+.schema-arf-name,
+.schema-arf-kind {
+  padding: 4px 8px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  background: var(--background-primary);
+  color: var(--text-normal);
+  font-size: 13px;
+}
+
+.schema-arf-btn {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  background: var(--background-primary);
+  color: var(--text-normal);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.schema-arf-btn:hover {
+  background: var(--background-modifier-hover);
+}
+
+.schema-arf-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.schema-arf-del {
+  color: var(--text-error);
+}
+
+/* Color picker control (per-type Defaults) */
+.schema-color-control {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.schema-color-swatch {
+  width: 36px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  cursor: pointer;
+  background: transparent;
+}
+
+.schema-color-text {
+  width: 100px;
+  padding: 4px 8px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  background: var(--background-primary);
+  color: var(--text-normal);
+  font-family: var(--font-monospace);
+  font-size: 13px;
+}
+
+/* Icon control (per-type Defaults) */
+.schema-icon-control {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.schema-icon-preview {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  background: var(--background-primary);
+}
+
+.schema-icon-preview svg {
+  width: 18px;
+  height: 18px;
+}
+
+.schema-icon-text {
+  flex: 1;
+  padding: 4px 8px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  background: var(--background-primary);
+  color: var(--text-normal);
+  font-size: 13px;
+}
+
 /* Lookup block (live-rendered code blocks) */
 .schema-lookup-block {
   margin: 8px 0;
