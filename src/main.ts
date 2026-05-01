@@ -15,6 +15,7 @@ import { FieldPickerModal } from "./ui/field-edit-modal";
 import { QueryPlaygroundModal } from "./ui/query-playground";
 import { SchemaSettingsTab } from "./ui/settings-tab";
 import { TypeBannerManager } from "./ui/type-banner";
+import { TypedWikilinkSuggest } from "./ui/typed-wikilink-suggest";
 
 /** Kind controls which widget renders in each type's Defaults section. */
 export type AutoRefreshedFieldKind = "text" | "color" | "icon";
@@ -81,6 +82,7 @@ export default class SchemaPlugin extends Plugin {
 		registerBlockRenderer(this);
 
 		this.addSettingTab(new SchemaSettingsTab(this.app, this));
+		this.registerEditorSuggest(new TypedWikilinkSuggest(this.app, this));
 
 		this.app.workspace.onLayoutReady(() => {
 			this.loader.start(this.settings.schemas);
