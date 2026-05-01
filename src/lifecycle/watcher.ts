@@ -1,7 +1,7 @@
 import { Notice, TFile, type EventRef } from "obsidian";
 import type SchemaPlugin from "../main";
 import { cleanFrontmatter } from "./clean";
-import { reshelveToSchema } from "./reshelve";
+import { resolveFolder, reshelveToSchema } from "./reshelve";
 
 /**
  * Watches `metadataCache.on("changed")` for `type:` value changes and runs the
@@ -72,9 +72,22 @@ export class TypeChangeWatcher {
 			return;
 		}
 
-		this.inFlight.add(file.path);
+		const fm = (cache?.frontmatter as Record<string, unknown> | undefined) ?? {};
+
+		// Lock BOTH the old and the predicted new path before kicking off the
+		// rename, so the FolderMappingWatcher can't react to our own
+		// vault.rename event during the window between renameFile firing and
+		// our finally block running.
+		const originalPath = file.path;
+		const targetFolder = resolveFolder(schema, fm);
+		const predictedPath = targetFolder
+			? `${targetFolder.replace(/\/+$/, "")}/${file.name}`
+			: originalPath;
+		this.inFlight.add(originalPath);
+		const predictedDifferent = predictedPath !== originalPath;
+		if (predictedDifferent) this.inFlight.add(predictedPath);
+
 		try {
-			const fm = (cache?.frontmatter as Record<string, unknown> | undefined) ?? {};
 			const moveResult = await reshelveToSchema(this.plugin.app, file, schema, fm);
 			// After a rename, the TFile's path is updated in-place by Obsidian. Re-fetch.
 			const movedFile = this.plugin.app.vault.getAbstractFileByPath(moveResult?.to ?? file.path);
@@ -106,7 +119,14 @@ export class TypeChangeWatcher {
 			console.error("[schema] type-change handling failed:", err);
 			new Notice(`Schema: type-change error — see console.`);
 		} finally {
-			this.inFlight.delete(file.path);
+			this.inFlight.delete(originalPath);
+			if (predictedDifferent) this.inFlight.delete(predictedPath);
+			// In case the actual destination path differs from the prediction
+			// (rare — would mean reshelveToSchema disambiguated or the schema
+			// folder template resolved differently), also clear file.path.
+			if (file.path !== originalPath && file.path !== predictedPath) {
+				this.inFlight.delete(file.path);
+			}
 		}
 	}
 }

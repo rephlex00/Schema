@@ -43,7 +43,14 @@ export async function createInstance(plugin: SchemaPlugin, schema: TypeSchema): 
 		return null;
 	}
 	const folder = renderTemplate(resolved.folder!, renderContext);
-	const targetPath = await ensureUniquePath(plugin.app, `${folder.replace(/\/$/, "")}/${filename}.md`);
+	let targetPath: string;
+	try {
+		targetPath = await ensureUniquePath(plugin.app, `${folder.replace(/\/$/, "")}/${filename}.md`);
+	} catch (err) {
+		console.error("[schema] could not find unique path:", err);
+		new Notice(`Schema: too many similar filenames; aborting create.`);
+		return null;
+	}
 
 	const fm = buildFrontmatter(resolved, promptedValues);
 	const body = renderFrontmatter(fm);

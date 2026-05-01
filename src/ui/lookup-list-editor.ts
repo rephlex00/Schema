@@ -12,6 +12,8 @@ export class LookupListEditor {
 	private readonly plugin: SchemaPlugin;
 	private readonly typeName: string;
 	private debounceTimer: number | null = null;
+	/** Per-lookup-index accumulated edits. Same fix as FieldListEditor. */
+	private pending = new Map<number, Partial<LookupSchema>>();
 
 	constructor(plugin: SchemaPlugin, typeName: string) {
 		this.plugin = plugin;
@@ -156,12 +158,18 @@ export class LookupListEditor {
 	}
 
 	private queueUpdate(index: number, partial: Partial<LookupSchema>): void {
+		const cur = this.pending.get(index) ?? {};
+		this.pending.set(index, { ...cur, ...partial });
 		if (this.debounceTimer != null) window.clearTimeout(this.debounceTimer);
 		this.debounceTimer = window.setTimeout(() => {
 			this.debounceTimer = null;
 			const schema = this.plugin.loader.get(this.typeName);
 			if (!schema) return;
-			const lookups = schema.lookups.map((l, i) => (i === index ? { ...l, ...partial } : l));
+			const updates = this.pending;
+			this.pending = new Map();
+			const lookups = schema.lookups.map((l, i) =>
+				updates.has(i) ? { ...l, ...updates.get(i)! } : l
+			);
 			this.plugin.loader.update(this.typeName, { lookups });
 		}, 400);
 	}

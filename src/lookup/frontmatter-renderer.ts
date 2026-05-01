@@ -89,6 +89,22 @@ export class FrontmatterLookupRenderer {
 			);
 		}
 
+		// Equality check BEFORE processFrontMatter. Without this, even no-op
+		// passes can fire metadataCache.changed (some Obsidian versions do)
+		// which restarts the 1500ms debounce in scheduleRefresh — perpetual loop.
+		const cache = this.plugin.app.metadataCache.getFileCache(file);
+		const currentFm = (cache?.frontmatter ?? {}) as Record<string, unknown>;
+		let needsWrite = false;
+		for (const [name, links] of next) {
+			const before = JSON.stringify(currentFm[name] ?? []);
+			const after = JSON.stringify(links);
+			if (before !== after) {
+				needsWrite = true;
+				break;
+			}
+		}
+		if (!needsWrite) return false;
+
 		this.inFlight.add(file.path);
 		try {
 			let changed = false;
@@ -106,10 +122,5 @@ export class FrontmatterLookupRenderer {
 		} finally {
 			this.inFlight.delete(file.path);
 		}
-	}
-
-	/** Insert a `\`\`\`schema-lookup <name>\`\`\`` block into a file's body if it isn't already there. */
-	static blockSnippet(name: string): string {
-		return "```schema-lookup\n" + name + "\n```";
 	}
 }

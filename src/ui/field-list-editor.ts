@@ -14,6 +14,9 @@ export class FieldListEditor {
 	private readonly plugin: SchemaPlugin;
 	private readonly typeName: string;
 	private debounceTimer: number | null = null;
+	/** Per-field-index accumulated edits. A single timer flushes all of them
+	 *  together so editing field A then field B within 400ms doesn't lose A. */
+	private pending = new Map<number, Partial<FieldSchema>>();
 
 	constructor(plugin: SchemaPlugin, typeName: string) {
 		this.plugin = plugin;
@@ -194,12 +197,18 @@ export class FieldListEditor {
 	}
 
 	private queueFieldUpdate(index: number, partial: Partial<FieldSchema>): void {
+		const cur = this.pending.get(index) ?? {};
+		this.pending.set(index, { ...cur, ...partial });
 		if (this.debounceTimer != null) window.clearTimeout(this.debounceTimer);
 		this.debounceTimer = window.setTimeout(() => {
 			this.debounceTimer = null;
 			const schema = this.plugin.loader.get(this.typeName);
 			if (!schema) return;
-			const fields = schema.fields.map((f, i) => (i === index ? { ...f, ...partial } : f));
+			const updates = this.pending;
+			this.pending = new Map();
+			const fields = schema.fields.map((f, i) =>
+				updates.has(i) ? { ...f, ...updates.get(i)! } : f
+			);
 			this.plugin.loader.update(this.typeName, { fields });
 		}, 400);
 	}

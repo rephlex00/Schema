@@ -63,20 +63,27 @@ export class FolderMappingsEditor {
 			cls: "schema-fm-folder",
 			attr: { value: folder, placeholder: "Folder path (no leading slash)" },
 		});
+		// Mutable ref to the current folder name. Captured by closures below
+		// so a folder rename followed by a type change (in either order)
+		// targets the right key, even before the next display() refresh.
+		const ref = { current: folder };
+
 		folderInput.addEventListener("change", () => {
 			const newFolder = folderInput.value.trim().replace(/\/+$/, "");
 			if (!newFolder) {
 				new Notice("Schema: folder cannot be empty.");
-				folderInput.value = folder;
+				folderInput.value = ref.current;
 				return;
 			}
-			if (newFolder !== folder && newFolder in this.plugin.settings.folderMappings) {
+			if (newFolder !== ref.current && newFolder in this.plugin.settings.folderMappings) {
 				new Notice(`Schema: folder "${newFolder}" is already mapped.`);
-				folderInput.value = folder;
+				folderInput.value = ref.current;
 				return;
 			}
-			delete this.plugin.settings.folderMappings[folder];
+			if (newFolder === ref.current) return;
+			delete this.plugin.settings.folderMappings[ref.current];
 			this.plugin.settings.folderMappings[newFolder] = type;
+			ref.current = newFolder;
 			void this.commit();
 		});
 
@@ -87,13 +94,13 @@ export class FolderMappingsEditor {
 			if (s.name === type) opt.selected = true;
 		}
 		select.addEventListener("change", () => {
-			this.plugin.settings.folderMappings[folder] = select.value;
+			this.plugin.settings.folderMappings[ref.current] = select.value;
 			void this.commit();
 		});
 
 		const delBtn = row.createEl("button", { text: "×", cls: "schema-arf-btn schema-arf-del" });
 		delBtn.addEventListener("click", () => {
-			delete this.plugin.settings.folderMappings[folder];
+			delete this.plugin.settings.folderMappings[ref.current];
 			void this.commit();
 		});
 	}

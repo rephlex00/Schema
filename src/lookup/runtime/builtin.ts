@@ -59,25 +59,19 @@ export class BuiltinRuntime implements QueryRuntime {
 	}
 
 	private compileFilter(src: string): (page: unknown, current: unknown, dvLuxon: unknown) => boolean {
-		// We accept a raw arrow-function source, e.g. `m => m.type === "event" && ...`.
-		// Wrap into a real function whose first arg is the iterated page.
-		// Inject `current` and a partial `dv` containing only the luxon shim.
-		const fn = new Function("__dv__", `return (${src});`);
-		const arrow = fn({ luxon: undefined });
-		if (typeof arrow !== "function") {
-			throw new Error(`builtin runtime: filter source did not yield a function`);
-		}
-		return (page, current, dvLuxon) => {
-			// Provide a fake `dv` with .luxon for callers that read it.
-			(globalThis as unknown as { dv?: unknown }).dv = { luxon: dvLuxon };
-			(globalThis as unknown as { current?: unknown }).current = current;
-			try {
-				return Boolean(arrow(page));
-			} finally {
-				delete (globalThis as Record<string, unknown>).dv;
-				delete (globalThis as Record<string, unknown>).current;
-			}
-		};
+		// We accept a raw arrow-function source like `m => m.type === "event" && current.file.path === ...`.
+		// Free variables `current` and `dv` in the source resolve via parameters
+		// of an outer wrapper function — NOT globals — so we don't pollute
+		// globalThis during query execution. Errors propagate to the per-file
+		// try/catch in run() so we keep the file path in diagnostics.
+		const wrapper = new Function(
+			"page",
+			"current",
+			"dv",
+			`return (${src})(page);`
+		);
+		return (page, current, dvLuxon) =>
+			Boolean(wrapper(page, current, { luxon: dvLuxon }));
 	}
 
 	private collectPages(folder: string): { page: unknown; file: TFile }[] {

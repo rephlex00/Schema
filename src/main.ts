@@ -218,13 +218,28 @@ export default class SchemaPlugin extends Plugin {
 	private migrateAutoRefreshedFields(): void {
 		const arr = this.settings.autoRefreshedFields as unknown[];
 		if (!Array.isArray(arr) || arr.length === 0) return;
-		// If the first element is a string, this is the v2.0 shape — convert.
-		if (typeof arr[0] === "string") {
-			this.settings.autoRefreshedFields = (arr as string[]).map((name) => ({
-				name,
-				kind:
-					name === "color" ? "color" : name === "icon" ? "icon" : "text",
-			}));
+		let needsMigration = false;
+		const migrated: AutoRefreshedField[] = [];
+		for (const item of arr) {
+			if (typeof item === "string") {
+				needsMigration = true;
+				migrated.push({
+					name: item,
+					kind: item === "color" ? "color" : item === "icon" ? "icon" : "text",
+				});
+			} else if (
+				item &&
+				typeof item === "object" &&
+				typeof (item as { name?: unknown }).name === "string"
+			) {
+				migrated.push(item as AutoRefreshedField);
+			} else {
+				// Drop unknown shapes; flag as a migration so we save the cleanup.
+				needsMigration = true;
+			}
+		}
+		if (needsMigration) {
+			this.settings.autoRefreshedFields = migrated;
 			void this.saveSettings();
 		}
 	}

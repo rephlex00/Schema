@@ -75,12 +75,12 @@ function resolveInner(
 
 function mergeOnto(parent: TypeSchema, child: TypeSchema): TypeSchema {
 	const fieldMap = new Map<string, FieldSchema>();
-	for (const f of parent.fields) fieldMap.set(f.name, f);
-	for (const f of child.fields) fieldMap.set(f.name, f);
+	for (const f of parent.fields) fieldMap.set(f.name, cloneField(f));
+	for (const f of child.fields) fieldMap.set(f.name, cloneField(f));
 
 	const lookupMap = new Map<string, LookupSchema>();
-	for (const l of parent.lookups) lookupMap.set(l.name, l);
-	for (const l of child.lookups) lookupMap.set(l.name, l);
+	for (const l of parent.lookups) lookupMap.set(l.name, { ...l });
+	for (const l of child.lookups) lookupMap.set(l.name, { ...l });
 
 	return {
 		name: child.name,
@@ -102,10 +102,21 @@ function cloneSchema(s: TypeSchema): TypeSchema {
 		folder: s.folder,
 		filename: s.filename,
 		tags: [...s.tags],
-		fields: [...s.fields],
-		lookups: [...s.lookups],
+		fields: s.fields.map(cloneField),
+		lookups: s.lookups.map((l) => ({ ...l })),
 		defaults: { ...s.defaults },
 		version: s.version,
+	};
+}
+
+/** Deep-ish clone of a FieldSchema — `options` is a top-level dict that gets
+ *  mutated by some UI code paths, so spread it; deeper nesting (e.g.
+ *  options.valuesList) stays shared by reference, which is acceptable
+ *  because no consumer mutates those nested values in place. */
+function cloneField(f: FieldSchema): FieldSchema {
+	return {
+		...f,
+		options: f.options ? { ...f.options } : undefined,
 	};
 }
 
