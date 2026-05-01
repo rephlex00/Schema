@@ -1,4 +1,5 @@
 import { Notice, Plugin } from "obsidian";
+import { CreateCommandRegistry } from "./lifecycle/commands";
 import { SchemaLoader } from "./schema/loader";
 import type { TypeSchema } from "./schema/types";
 
@@ -17,6 +18,7 @@ const DEFAULT_SETTINGS: SchemaSettings = {
 export default class SchemaPlugin extends Plugin {
 	settings: SchemaSettings = DEFAULT_SETTINGS;
 	loader!: SchemaLoader;
+	createCommands!: CreateCommandRegistry;
 
 	async onload() {
 		await this.loadSettings();
@@ -24,6 +26,7 @@ export default class SchemaPlugin extends Plugin {
 		this.loader = new SchemaLoader(this.app, {
 			schemaFolder: this.settings.schemaFolder,
 		});
+		this.createCommands = new CreateCommandRegistry(this);
 
 		// Defer initial schema scan until the vault has finished indexing,
 		// so cachedRead returns up-to-date content.
@@ -37,12 +40,14 @@ export default class SchemaPlugin extends Plugin {
 				} else {
 					console.log(`[schema] loaded ${count} types from ${this.settings.schemaFolder}`);
 				}
+				this.createCommands.refresh(this.loader.getAll());
 			});
 		});
 
 		this.registerEvent(
 			this.loader.on("schema-changed", ((schemas: TypeSchema[]) => {
 				console.log(`[schema] schema-changed: ${schemas.length} types`);
+				this.createCommands.refresh(schemas);
 			}) as (...data: unknown[]) => unknown)
 		);
 
