@@ -3,6 +3,7 @@ import type SchemaPlugin from "../main";
 import type { TypeSchema } from "../schema/types";
 import { FieldListEditor } from "./field-list-editor";
 import { LookupListEditor } from "./lookup-list-editor";
+import { confirmAction } from "./prompt-modal";
 
 function isHex(s: string): boolean {
 	return /^#[0-9A-Fa-f]{6}$/.test(s.trim());
@@ -217,8 +218,9 @@ export class TypeEditor {
 		new Setting(parent).addButton((btn) => {
 			btn.setButtonText("Delete type")
 				.setWarning()
-				.onClick(() => {
-					const ok = window.confirm(
+				.onClick(async () => {
+					const ok = await confirmAction(
+						this.plugin.app,
 						`Delete type "${schema.name}"? Existing notes with this type will keep their frontmatter but lose schema validation.`
 					);
 					if (!ok) return;

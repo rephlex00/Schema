@@ -1,6 +1,7 @@
 import { Notice, Setting } from "obsidian";
 import type SchemaPlugin from "../main";
 import { ALL_FIELD_TYPES, type FieldSchema, type FieldType, type TypeSchema } from "../schema/types";
+import { promptForString } from "./prompt-modal";
 
 /**
  * Renders the `Fields` section for a single TypeSchema. Each field is a row
@@ -26,7 +27,7 @@ export class FieldListEditor {
 		new Setting(parent).addButton((btn) => {
 			btn.setButtonText("+ Add field")
 				.setCta()
-				.onClick(() => this.addField());
+				.onClick(() => void this.addField());
 		});
 
 		if (schema.fields.length === 0) {
@@ -160,16 +161,16 @@ export class FieldListEditor {
 		}
 	}
 
-	private addField(): void {
+	private async addField(): Promise<void> {
 		const schema = this.plugin.loader.get(this.typeName);
 		if (!schema) return;
-		const name = window.prompt("Field name");
+		const name = await promptForString(this.plugin.app, "Add field", "Field name");
 		if (!name) return;
 		if (schema.fields.some((f) => f.name === name)) {
 			new Notice(`Schema: field "${name}" already exists.`);
 			return;
 		}
-		const newField: FieldSchema = { name: name.trim(), type: "Input" };
+		const newField: FieldSchema = { name, type: "Input" };
 		const fields = [...schema.fields, newField];
 		this.plugin.loader.update(this.typeName, { fields });
 	}

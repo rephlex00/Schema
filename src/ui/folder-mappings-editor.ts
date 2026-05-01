@@ -1,5 +1,6 @@
 import { Notice, Setting } from "obsidian";
 import type SchemaPlugin from "../main";
+import { promptForString } from "./prompt-modal";
 
 /**
  * Renders the global "Folder mappings" editor: each row is one (folder → type)
@@ -50,7 +51,7 @@ export class FolderMappingsEditor {
 		new Setting(wrap).addButton((btn) => {
 			btn.setButtonText("+ Add mapping")
 				.setCta()
-				.onClick(() => this.addMapping());
+				.onClick(() => void this.addMapping());
 		});
 	}
 
@@ -97,10 +98,15 @@ export class FolderMappingsEditor {
 		});
 	}
 
-	private addMapping(): void {
-		const folder = window.prompt("Folder path (e.g. Facts/People)");
+	private async addMapping(): Promise<void> {
+		const folder = await promptForString(
+			this.plugin.app,
+			"Add folder mapping",
+			"Folder path",
+			"e.g. Facts/People"
+		);
 		if (!folder) return;
-		const norm = folder.trim().replace(/\/+$/, "");
+		const norm = folder.replace(/\/+$/, "");
 		if (!norm) return;
 		if (norm in this.plugin.settings.folderMappings) {
 			new Notice(`Schema: folder "${norm}" is already mapped.`);
@@ -112,7 +118,7 @@ export class FolderMappingsEditor {
 			return;
 		}
 		this.plugin.settings.folderMappings[norm] = types[0].name;
-		void this.commit();
+		await this.commit();
 	}
 
 	private async commit(): Promise<void> {

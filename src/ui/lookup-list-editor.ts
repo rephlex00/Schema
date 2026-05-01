@@ -1,6 +1,7 @@
 import { Notice, Setting } from "obsidian";
 import type SchemaPlugin from "../main";
 import type { LookupSchema } from "../schema/types";
+import { promptForString } from "./prompt-modal";
 
 /**
  * Renders the `Lookups` section for a single TypeSchema. One row per lookup
@@ -24,7 +25,7 @@ export class LookupListEditor {
 		new Setting(parent).addButton((btn) => {
 			btn.setButtonText("+ Add lookup")
 				.setCta()
-				.onClick(() => this.addLookup());
+				.onClick(() => void this.addLookup());
 		});
 
 		if (schema.lookups.length === 0) {
@@ -116,17 +117,17 @@ export class LookupListEditor {
 			});
 	}
 
-	private addLookup(): void {
+	private async addLookup(): Promise<void> {
 		const schema = this.plugin.loader.get(this.typeName);
 		if (!schema) return;
-		const name = window.prompt("Lookup name");
+		const name = await promptForString(this.plugin.app, "Add lookup", "Lookup name");
 		if (!name) return;
 		if (schema.lookups.some((l) => l.name === name)) {
 			new Notice(`Schema: lookup "${name}" already exists.`);
 			return;
 		}
 		const newLookup: LookupSchema = {
-			name: name.trim(),
+			name,
 			query: `dv.pages('"Moments"').filter(m => true)`,
 			render: "frontmatter",
 			output: "list",

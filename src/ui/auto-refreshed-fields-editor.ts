@@ -1,6 +1,7 @@
 import { Notice, Setting } from "obsidian";
 import type SchemaPlugin from "../main";
 import type { AutoRefreshedField, AutoRefreshedFieldKind } from "../main";
+import { promptForString } from "./prompt-modal";
 
 const KIND_OPTIONS: AutoRefreshedFieldKind[] = ["text", "color", "icon"];
 
@@ -37,7 +38,7 @@ export class AutoRefreshedFieldsEditor {
 		new Setting(wrap).addButton((btn) => {
 			btn.setButtonText("+ Add field")
 				.setCta()
-				.onClick(() => this.addField());
+				.onClick(() => void this.addField());
 		});
 	}
 
@@ -74,15 +75,19 @@ export class AutoRefreshedFieldsEditor {
 		delBtn.addEventListener("click", () => this.remove(index));
 	}
 
-	private addField(): void {
-		const name = window.prompt("Frontmatter key name");
+	private async addField(): Promise<void> {
+		const name = await promptForString(
+			this.plugin.app,
+			"Add auto-refreshed field",
+			"Frontmatter key name"
+		);
 		if (!name) return;
 		if (this.plugin.settings.autoRefreshedFields.some((f) => f.name === name)) {
 			new Notice(`Schema: "${name}" is already in the auto-refreshed list.`);
 			return;
 		}
-		this.plugin.settings.autoRefreshedFields.push({ name: name.trim(), kind: "text" });
-		void this.commit();
+		this.plugin.settings.autoRefreshedFields.push({ name, kind: "text" });
+		await this.commit();
 	}
 
 	private remove(index: number): void {

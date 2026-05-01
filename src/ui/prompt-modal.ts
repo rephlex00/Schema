@@ -114,3 +114,72 @@ export function promptForValues(
 		new PromptModal(app, title, fields, resolve).open();
 	});
 }
+
+/**
+ * Single-string prompt. Resolves to the trimmed string, or null on cancel.
+ * Used in place of `window.prompt()` (which Electron disables).
+ */
+export async function promptForString(
+	app: App,
+	title: string,
+	label: string,
+	placeholder?: string
+): Promise<string | null> {
+	const result = await promptForValues(app, title, [
+		{ key: "value", label, placeholder },
+	]);
+	if (result === null) return null;
+	const v = (result.value ?? "").trim();
+	return v.length === 0 ? null : v;
+}
+
+/**
+ * Yes/no confirmation. Resolves to true if confirmed, false otherwise.
+ * Used in place of `window.confirm()` (which Electron also disables).
+ */
+export class ConfirmModal extends Modal {
+	private readonly message: string;
+	private readonly resolver: (ok: boolean) => void;
+	private resolved = false;
+
+	constructor(app: App, message: string, resolver: (ok: boolean) => void) {
+		super(app);
+		this.message = message;
+		this.resolver = resolver;
+	}
+
+	onOpen(): void {
+		const { contentEl } = this;
+		contentEl.empty();
+		contentEl.createEl("p", { text: this.message });
+		new Setting(contentEl)
+			.addButton((btn) =>
+				btn
+					.setButtonText("OK")
+					.setCta()
+					.onClick(() => {
+						this.resolved = true;
+						this.resolver(true);
+						this.close();
+					})
+			)
+			.addButton((btn) =>
+				btn.setButtonText("Cancel").onClick(() => {
+					this.resolved = true;
+					this.resolver(false);
+					this.close();
+				})
+			);
+	}
+
+	onClose(): void {
+		this.contentEl.empty();
+		if (!this.resolved) this.resolver(false);
+	}
+}
+
+export function confirmAction(app: App, message: string): Promise<boolean> {
+	return new Promise((resolve) => {
+		new ConfirmModal(app, message, resolve).open();
+	});
+}
