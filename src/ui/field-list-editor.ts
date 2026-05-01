@@ -1,7 +1,38 @@
-import { Notice, Setting } from "obsidian";
+import { Notice, Setting, setIcon } from "obsidian";
 import type SchemaPlugin from "../main";
 import { ALL_FIELD_TYPES, type FieldSchema, type FieldType, type TypeSchema } from "../schema/types";
 import { promptForString } from "./prompt-modal";
+
+/** Build a row-action toolbar (up/down/delete) anchored to the right of a
+ *  details `<summary>`. Buttons stop propagation so they don't toggle expand. */
+function buildRowActions(
+	summary: HTMLElement,
+	canMoveUp: boolean,
+	canMoveDown: boolean,
+	onUp: () => void,
+	onDown: () => void,
+	onDelete: () => void
+): void {
+	const actions = summary.createSpan({ cls: "schema-row-actions" });
+	const mk = (icon: string, label: string, disabled: boolean, handler: () => void, danger = false) => {
+		const btn = actions.createEl("button", {
+			cls: `schema-row-btn${danger ? " schema-row-btn-danger" : ""}`,
+			attr: { type: "button", "aria-label": label, title: label },
+		});
+		setIcon(btn, icon);
+		btn.disabled = disabled;
+		btn.addEventListener("click", (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+			if (!btn.disabled) handler();
+		});
+	};
+	mk("chevron-up", "Move up", !canMoveUp, onUp);
+	mk("chevron-down", "Move down", !canMoveDown, onDown);
+	mk("trash-2", "Delete", false, onDelete, true);
+}
+
+export { buildRowActions };
 
 /**
  * Renders the `Fields` section for a single TypeSchema. Each field is a row
@@ -48,11 +79,20 @@ export class FieldListEditor {
 		const row = parent.createEl("div", { cls: "schema-field-row" });
 		const details = row.createEl("details");
 		const summary = details.createEl("summary");
-		summary.createEl("strong", { text: field.name });
-		summary.createEl("span", {
+		const text = summary.createSpan({ cls: "schema-row-text" });
+		text.createEl("strong", { text: field.name });
+		text.createEl("span", {
 			cls: "schema-type-meta",
 			text: ` (${field.type})${field.promptOnCreate ? " · prompt" : ""}${field.target ? ` · → ${field.target}` : ""}`,
 		});
+		buildRowActions(
+			summary,
+			index > 0,
+			index < schema.fields.length - 1,
+			() => this.moveField(index, -1),
+			() => this.moveField(index, 1),
+			() => this.removeField(index)
+		);
 
 		const body = details.createEl("div", { cls: "schema-field-body" });
 
@@ -84,22 +124,6 @@ export class FieldListEditor {
 			});
 
 		this.renderTypeSpecificOptions(body, field, index);
-
-		const actions = body.createEl("div", { cls: "schema-field-actions" });
-		new Setting(actions)
-			.addButton((btn) => {
-				btn.setButtonText("↑").setDisabled(index === 0).onClick(() => this.moveField(index, -1));
-			})
-			.addButton((btn) => {
-				btn.setButtonText("↓").setDisabled(index === schema.fields.length - 1).onClick(() =>
-					this.moveField(index, 1)
-				);
-			})
-			.addButton((btn) => {
-				btn.setButtonText("Delete")
-					.setWarning()
-					.onClick(() => this.removeField(index));
-			});
 	}
 
 	private renderTypeSpecificOptions(

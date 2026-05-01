@@ -128,31 +128,67 @@ export class SchemaSettingsTab extends PluginSettingTab {
 		this.populateTypeList(list);
 	}
 
-	/** (Re)populate the types list based on `this.filterText`. */
+	/** (Re)populate the types list based on `this.filterText`. Types render
+	 *  as a parent-child tree: types extending another type are nested below
+	 *  their parent and indented one level. Filtering keeps matched types AND
+	 *  their ancestors so the tree structure stays intact. */
 	private populateTypeList(list: HTMLElement): void {
 		list.empty();
-		const allTypes = this.plugin.loader
-			.getAll()
-			.slice()
-			.sort((a, b) => a.name.localeCompare(b.name));
+		const allTypes = this.plugin.loader.getAll().slice();
+		const byName = new Map(allTypes.map((t) => [t.name, t] as const));
 		const q = this.filterText.trim().toLowerCase();
-		const filtered =
-			q.length === 0
-				? allTypes
-				: allTypes.filter((s) => {
-						const hay = `${s.name} ${s.extends ?? ""} ${s.folder ?? ""}`.toLowerCase();
-						return hay.includes(q);
-					});
-		if (filtered.length === 0) {
+
+		const matches = (s: { name: string; extends?: string; folder?: string }): boolean => {
+			if (q.length === 0) return true;
+			const hay = `${s.name} ${s.extends ?? ""} ${s.folder ?? ""}`.toLowerCase();
+			return hay.includes(q);
+		};
+
+		// Compute the visible set: any matched type plus every ancestor in
+		// its extends-chain (so the tree position stays intact).
+		const visible = new Set<string>();
+		for (const t of allTypes) {
+			if (!matches(t)) continue;
+			let cur: string | undefined = t.name;
+			const seen = new Set<string>();
+			while (cur && !seen.has(cur)) {
+				seen.add(cur);
+				visible.add(cur);
+				cur = byName.get(cur)?.extends;
+			}
+		}
+
+		if (visible.size === 0) {
 			list.createEl("div", {
 				cls: "schema-empty",
 				text: `No types match "${this.filterText}".`,
 			});
 			return;
 		}
-		for (const schema of filtered) {
-			new TypeEditor(this.plugin, schema.name).render(list, false);
+
+		// Group children by parent name.
+		const childrenOf = new Map<string, string[]>();
+		const roots: string[] = [];
+		for (const t of allTypes) {
+			if (!visible.has(t.name)) continue;
+			const parent = t.extends && visible.has(t.extends) ? t.extends : null;
+			if (parent) {
+				if (!childrenOf.has(parent)) childrenOf.set(parent, []);
+				childrenOf.get(parent)!.push(t.name);
+			} else {
+				roots.push(t.name);
+			}
 		}
+		const cmp = (a: string, b: string) => a.localeCompare(b);
+		roots.sort(cmp);
+		for (const arr of childrenOf.values()) arr.sort(cmp);
+
+		const renderTree = (name: string, depth: number) => {
+			new TypeEditor(this.plugin, name).render(list, false, depth);
+			const kids = childrenOf.get(name) ?? [];
+			for (const k of kids) renderTree(k, depth + 1);
+		};
+		for (const r of roots) renderTree(r, 0);
 	}
 
 	private refreshTypeList(): void {

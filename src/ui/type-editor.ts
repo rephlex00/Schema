@@ -47,31 +47,39 @@ export class TypeEditor {
 		this.schemaName = schemaName;
 	}
 
-	render(parent: HTMLElement, expanded = false): void {
+	render(parent: HTMLElement, expanded = false, depth = 0): void {
 		const schema = this.plugin.loader.get(this.schemaName);
 		if (!schema) return;
 
 		const details = parent.createEl("details", { cls: "schema-type-block" });
 		if (expanded) details.setAttr("open", "");
+		if (depth > 0) {
+			details.addClass("schema-type-nested");
+			details.style.marginLeft = `${depth * 20}px`;
+		}
 		this.container = details;
 
 		const summary = details.createEl("summary");
 		const iconName = typeof schema.defaults?.icon === "string" ? schema.defaults.icon : "";
 		const color = typeof schema.defaults?.color === "string" ? schema.defaults.color : "";
+
+		const chip = summary.createSpan({ cls: "schema-type-chip" });
+		if (color) chip.style.setProperty("--type-color", color);
 		if (iconName) {
-			const iconEl = summary.createSpan({ cls: "schema-type-icon" });
+			const iconEl = chip.createSpan({ cls: "schema-type-icon" });
 			setIcon(iconEl, iconName);
-			if (color) iconEl.style.color = color;
 		}
-		const nameEl = summary.createEl("strong", {
-			text: schema.name,
-			cls: "schema-type-name",
-		});
-		if (color) nameEl.style.color = color;
-		const ext = schema.extends ? ` extends ${schema.extends}` : "";
+		chip.createSpan({ cls: "schema-type-name", text: schema.name });
+
+		const ext = schema.extends ? `extends ${schema.extends}` : "";
+		const meta: string[] = [];
+		if (ext) meta.push(ext);
+		meta.push(`${schema.fields.length} fields`);
+		meta.push(`${schema.lookups.length} lookups`);
+		meta.push(schema.folder ?? "(abstract)");
 		summary.createEl("span", {
 			cls: "schema-type-meta",
-			text: ` ${ext} · ${schema.fields.length} fields · ${schema.lookups.length} lookups${schema.folder ? " · " + schema.folder : " · (abstract)"}`,
+			text: meta.join(" · "),
 		});
 
 		const body = details.createEl("div", { cls: "schema-type-body" });
@@ -84,12 +92,13 @@ export class TypeEditor {
 
 	private renderBasics(parent: HTMLElement, schema: TypeSchema): void {
 		parent.createEl("h5", { text: "Basics" });
+		const ind = parent.createDiv({ cls: "schema-section-indent" });
 
-		new Setting(parent).setName("Name").setDesc("Read-only after creation.").addText((t) => {
+		new Setting(ind).setName("Name").setDesc("Read-only after creation.").addText((t) => {
 			t.setValue(schema.name).setDisabled(true);
 		});
 
-		new Setting(parent)
+		new Setting(ind)
 			.setName("Extends")
 			.setDesc("Parent type. The validator checks the chain; field merging is not done.")
 			.addDropdown((d) => {
@@ -102,35 +111,35 @@ export class TypeEditor {
 				d.onChange((v) => this.queue({ extends: v || undefined }));
 			});
 
-		new Setting(parent)
+		new Setting(ind)
 			.setName("Folder")
-			.setDesc("Where instances live. Leave blank for abstract parents.")
+			.setDesc("Where instances live. Supports {{date:YYYY}} / {{date:YYYY-MM}} tokens. Leave blank for abstract parents.")
 			.addText((t) => {
 				t.setValue(schema.folder ?? "")
-					.setPlaceholder("e.g. Facts/People or Moments/{{datetime|year}}")
+					.setPlaceholder("e.g. Facts/People or Moments/{{date:YYYY}}")
 					.onChange((v) => this.queue({ folder: v || undefined }));
 			});
 
-		const filenamePreview = parent.createDiv({ cls: "schema-filename-preview" });
+		const filenamePreview = ind.createDiv({ cls: "schema-filename-preview" });
 		const updatePreview = (template: string) => {
 			filenamePreview.setText(`→ ${this.previewFilename(schema, template)}`);
 		};
 		updatePreview(schema.filename ?? "");
 
-		new Setting(parent)
+		new Setting(ind)
 			.setName("Filename template")
-			.setDesc("Liquid template for new note filenames. Blank → timestamp.")
+			.setDesc("Tokens: {{firstname}}, prompted fields, and {{date:YYYYMMDD-HHmm}} / {{time:HHmm}} (moment.js). Blank → timestamp.")
 			.addText((t) => {
 				t.setValue(schema.filename ?? "")
-					.setPlaceholder("e.g. {{firstname}} {{lastname}}")
+					.setPlaceholder("e.g. {{firstname}} {{lastname}} or {{date:YYYYMMDD-HHmm}}")
 					.onChange((v) => {
 						updatePreview(v);
 						this.queue({ filename: v || undefined });
 					});
 			});
-		parent.append(filenamePreview);
+		ind.append(filenamePreview);
 
-		new Setting(parent)
+		new Setting(ind)
 			.setName("Body template")
 			.setDesc(
 				"Path to a Templater file (vault-relative). Applied on creation; on type-change, asks before merging if body has content. Requires the Templater plugin."
@@ -141,7 +150,7 @@ export class TypeEditor {
 					.onChange((v) => this.queue({ bodyTemplate: v.trim() || undefined }));
 			});
 
-		new Setting(parent)
+		new Setting(ind)
 			.setName("Tags")
 			.setDesc("Auto-classification tags. One per line.")
 			.addTextArea((t) => {
@@ -157,7 +166,7 @@ export class TypeEditor {
 				t.inputEl.rows = 2;
 			});
 
-		new Setting(parent)
+		new Setting(ind)
 			.setName("Create note command")
 			.setDesc(
 				"When on, `Schema: New " + schema.name + "` appears in the command palette. Untick to keep abstract or rarely-created types out of the palette."
@@ -173,10 +182,11 @@ export class TypeEditor {
 
 	private renderDefaults(parent: HTMLElement, schema: TypeSchema): void {
 		parent.createEl("h5", { text: "Defaults" });
+		const ind = parent.createDiv({ cls: "schema-section-indent" });
 
 		const fields = this.plugin.settings.autoRefreshedFields;
 		if (fields.length === 0) {
-			parent.createEl("div", {
+			ind.createEl("div", {
 				cls: "schema-empty",
 				text: "(no auto-refreshed fields configured globally — see Settings → Schema → Global)",
 			});
@@ -186,7 +196,7 @@ export class TypeEditor {
 		for (const ar of fields) {
 			const current = schema.defaults?.[ar.name];
 			const value = typeof current === "string" ? current : current != null ? String(current) : "";
-			const setting = new Setting(parent).setName(ar.name);
+			const setting = new Setting(ind).setName(ar.name);
 			switch (ar.kind) {
 				case "color":
 					this.renderColorPicker(setting, value, (v) => this.queueDefault(schema, ar.name, v));
@@ -258,36 +268,53 @@ export class TypeEditor {
 
 	private renderFields(parent: HTMLElement, schema: TypeSchema): void {
 		parent.createEl("h5", { text: `Fields (${schema.fields.length})` });
+		const container = parent.createDiv({ cls: "schema-section-indent" });
 		const inherited = inheritedFieldNames(this.plugin.loader.rawMap(), schema.name);
 		if (inherited.length > 0) {
-			parent.createEl("div", {
+			container.createEl("div", {
 				cls: "schema-inheritance-hint",
 				text: `+ inherited from ${schema.extends}: ${inherited.join(", ")}`,
 			});
 		}
-		new FieldListEditor(this.plugin, schema.name).render(parent);
+		new FieldListEditor(this.plugin, schema.name).render(container);
 	}
 
 	private renderLookups(parent: HTMLElement, schema: TypeSchema): void {
 		parent.createEl("h5", { text: `Lookups (${schema.lookups.length})` });
+		const container = parent.createDiv({ cls: "schema-section-indent" });
 		const inherited = inheritedLookupNames(this.plugin.loader.rawMap(), schema.name);
 		if (inherited.length > 0) {
-			parent.createEl("div", {
+			container.createEl("div", {
 				cls: "schema-inheritance-hint",
 				text: `+ inherited from ${schema.extends}: ${inherited.join(", ")}`,
 			});
 		}
+		const resolved = this.plugin.loader.getResolved(schema.name);
+		const rawNames = new Set(schema.lookups.map((l) => l.name));
 		const synthesized = synthesizedInverseLookups(this.plugin.loader.rawMap(), schema.name);
-		if (synthesized.length > 0) {
-			const grouped = synthesized
-				.map((s) => `${s.name} (← ${s.sourceType})`)
-				.join(", ");
-			parent.createEl("div", {
+		if (synthesized.length > 0 && resolved) {
+			const previewWrap = container.createDiv({ cls: "schema-inverse-preview" });
+			previewWrap.createEl("div", {
 				cls: "schema-inheritance-hint",
-				text: `+ inverse: ${grouped}`,
+				text: `+ inverse (auto-generated):`,
 			});
+			for (const s of synthesized) {
+				if (rawNames.has(s.name)) continue; // manual lookup wins; don't preview
+				const item = previewWrap.createDiv({ cls: "schema-inverse-item" });
+				item.createEl("div", {
+					cls: "schema-inverse-name",
+					text: `${s.name} (← ${s.sourceType})`,
+				});
+				const synthLookup = resolved.lookups.find((l) => l.name === s.name);
+				if (synthLookup) {
+					item.createEl("pre", {
+						cls: "schema-inverse-query",
+						text: synthLookup.query,
+					});
+				}
+			}
 		}
-		new LookupListEditor(this.plugin, schema.name).render(parent);
+		new LookupListEditor(this.plugin, schema.name).render(container);
 	}
 
 	private renderDelete(parent: HTMLElement, schema: TypeSchema): void {

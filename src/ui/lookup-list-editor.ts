@@ -1,6 +1,7 @@
 import { Notice, Setting } from "obsidian";
 import type SchemaPlugin from "../main";
 import type { LookupSchema } from "../schema/types";
+import { buildRowActions } from "./field-list-editor";
 import { promptForString } from "./prompt-modal";
 
 /**
@@ -40,14 +41,25 @@ export class LookupListEditor {
 	}
 
 	private renderRow(parent: HTMLElement, lookup: LookupSchema, index: number): void {
+		const schema = this.plugin.loader.get(this.typeName);
+		const total = schema?.lookups.length ?? 0;
 		const row = parent.createEl("div", { cls: "schema-lookup-row" });
 		const details = row.createEl("details");
 		const summary = details.createEl("summary");
-		summary.createEl("strong", { text: lookup.name });
-		summary.createEl("span", {
+		const text = summary.createSpan({ cls: "schema-row-text" });
+		text.createEl("strong", { text: lookup.name });
+		text.createEl("span", {
 			cls: "schema-type-meta",
 			text: ` ${lookup.render}/${lookup.output}${lookup.render === "frontmatter" && lookup.autoUpdate === false ? " (manual)" : ""}`,
 		});
+		buildRowActions(
+			summary,
+			index > 0,
+			index < total - 1,
+			() => this.move(index, -1),
+			() => this.move(index, 1),
+			() => this.remove(index)
+		);
 
 		const body = details.createEl("div", { cls: "schema-lookup-body" });
 
@@ -102,21 +114,6 @@ export class LookupListEditor {
 					});
 				});
 		}
-
-		new Setting(body)
-			.addButton((btn) => {
-				btn.setButtonText("↑").setDisabled(index === 0).onClick(() => this.move(index, -1));
-			})
-			.addButton((btn) => {
-				const schema = this.plugin.loader.get(this.typeName);
-				const isLast = !schema || index === schema.lookups.length - 1;
-				btn.setButtonText("↓").setDisabled(isLast).onClick(() => this.move(index, 1));
-			})
-			.addButton((btn) => {
-				btn.setButtonText("Delete")
-					.setWarning()
-					.onClick(() => this.remove(index));
-			});
 	}
 
 	private async addLookup(): Promise<void> {

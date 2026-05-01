@@ -44,4 +44,49 @@ describe("renderTemplate", () => {
 		});
 		expect(out).toBe("Phoebe Durkee");
 	});
+
+	describe("moment-style date/time tokens", () => {
+		const fixed = new Date(2026, 3, 28, 14, 7, 9); // 2026-04-28 14:07:09
+
+		it("formats {{date:YYYYMMDD}} via __now context", () => {
+			expect(renderTemplate("{{date:YYYYMMDD}}", { __now: fixed })).toBe("20260428");
+		});
+
+		it("formats {{date:YYYY-MM-DD}}", () => {
+			expect(renderTemplate("{{date:YYYY-MM-DD}}", { __now: fixed })).toBe("2026-04-28");
+		});
+
+		it("formats {{time:HH:mm}}", () => {
+			expect(renderTemplate("{{time:HH:mm}}", { __now: fixed })).toBe("14:07");
+		});
+
+		it("formats default {{date}} as YYYY-MM-DD", () => {
+			expect(renderTemplate("{{date}}", { __now: fixed })).toBe("2026-04-28");
+		});
+
+		it("formats default {{time}} as HH:mm", () => {
+			expect(renderTemplate("{{time}}", { __now: fixed })).toBe("14:07");
+		});
+
+		it("formats moment ISO-week token", () => {
+			expect(renderTemplate("{{date:YYYYMM-[W]WW}}", { __now: fixed })).toBe("202604-W18");
+		});
+
+		it("works in folder templates", () => {
+			expect(renderTemplate("Moments/{{date:YYYY}}", { __now: fixed })).toBe("Moments/2026");
+		});
+
+		it("supports literal-bracket escapes", () => {
+			expect(renderTemplate("{{date:[Year-]YYYY}}", { __now: fixed })).toBe("Year-2026");
+		});
+
+		it("does not interfere with normal variables", () => {
+			expect(
+				renderTemplate("{{firstname}} {{date:YYYY}}", {
+					firstname: "Alice",
+					__now: fixed,
+				})
+			).toBe("Alice 2026");
+		});
+	});
 });

@@ -94,10 +94,12 @@
   cursor: pointer;
   padding: 6px 0;
   user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .schema-type-block[open] summary {
-  font-weight: 500;
   border-bottom: 1px solid var(--background-modifier-border);
   margin-bottom: 8px;
 }
@@ -106,27 +108,52 @@
   font-size: 14px;
 }
 
-.schema-type-block summary .schema-type-icon {
+/* Chip wrapping the type's icon + name in the collapsed summary. The chip's
+ * background is derived from the type's defaults.color (set inline as
+ * --type-color); falls back to a neutral muted background when no color set. */
+.schema-type-chip {
   display: inline-flex;
   align-items: center;
-  vertical-align: middle;
-  margin-right: 6px;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--type-color, var(--text-muted)) 14%, var(--background-primary));
+  color: var(--type-color, var(--text-normal));
+  border: 1px solid color-mix(in srgb, var(--type-color, var(--text-muted)) 28%, transparent);
+  font-weight: 600;
+  flex-shrink: 0;
 }
 
-.schema-type-block summary .schema-type-icon svg {
-  width: 16px;
-  height: 16px;
+.schema-type-chip .schema-type-icon {
+  display: inline-flex;
+  align-items: center;
 }
 
-.schema-type-block summary .schema-type-name {
-  vertical-align: middle;
+.schema-type-chip .schema-type-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.schema-type-chip .schema-type-name {
+  font-size: 13px;
+  letter-spacing: 0.02em;
 }
 
 .schema-type-meta {
   font-size: 11px;
   color: var(--text-muted);
   font-family: var(--font-monospace);
-  margin-left: 6px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Indent for nested types in the tree view (children of `extends:`). The
+ * inline margin-left is set per-level by the renderer. */
+.schema-type-nested {
+  border-left: 2px solid var(--background-modifier-border);
 }
 
 .schema-type-body h5 {
@@ -224,7 +251,45 @@
   margin-top: 24px;
 }
 
-/* Field/lookup row editors (filled in by 2.0-E and 2.0-F) */
+/* Indent containers for sub-sections inside a type editor (Basics, Defaults,
+ * Fields, Lookups). Visually groups the related controls. */
+.schema-section-indent {
+  margin-left: 12px;
+  padding-left: 8px;
+  border-left: 2px solid var(--background-modifier-border);
+}
+
+/* Inverse-lookup live preview block under the Lookups section. */
+.schema-inverse-preview {
+  margin: 4px 0 8px 0;
+}
+
+.schema-inverse-item {
+  margin: 4px 0 8px 0;
+}
+
+.schema-inverse-name {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: var(--font-monospace);
+  margin-bottom: 2px;
+}
+
+.schema-inverse-query {
+  margin: 0;
+  padding: 6px 8px;
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  font-family: var(--font-monospace);
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-x: auto;
+}
+
+/* Field/lookup row editors */
 .schema-field-row,
 .schema-lookup-row {
   border-top: 1px solid var(--background-modifier-border);
@@ -237,13 +302,62 @@
   padding: 4px 0;
   font-family: var(--font-monospace);
   font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
-.schema-field-row .schema-field-actions,
-.schema-lookup-row .schema-lookup-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 8px;
+.schema-field-row .schema-row-text,
+.schema-lookup-row .schema-row-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Action toolbar pinned to the right of a row's <summary>. */
+.schema-row-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.schema-row-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--text-muted);
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.schema-row-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.schema-row-btn:hover:not(:disabled) {
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.schema-row-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.schema-row-btn-danger:hover:not(:disabled) {
+  background: var(--background-modifier-error-hover, rgba(255, 80, 80, 0.15));
+  color: var(--text-error);
 }
 
 /* Auto-refreshed fields list (global config) */
