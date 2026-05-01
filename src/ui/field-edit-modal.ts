@@ -1,4 +1,5 @@
 import { App, FuzzySuggestModal, Modal, Setting, TFile } from "obsidian";
+import { evaluateFormula } from "../lifecycle/formula";
 import type SchemaPlugin from "../main";
 import type { FieldSchema, TypeSchema } from "../schema/types";
 
@@ -74,6 +75,9 @@ export class FieldEditModal extends Modal {
 				break;
 			case "Lookup":
 				this.renderLookup(contentEl);
+				break;
+			case "Formula":
+				this.renderFormula(contentEl);
 				break;
 			default:
 				this.renderText(contentEl, current);
@@ -166,6 +170,28 @@ export class FieldEditModal extends Modal {
 				);
 				area.inputEl.style.minHeight = "100px";
 			});
+	}
+
+	private renderFormula(parent: HTMLElement): void {
+		const opts = (this.field.options ?? {}) as { expression?: string };
+		const expression = typeof opts.expression === "string" ? opts.expression : "";
+		const valueEl = parent.createEl("div", { cls: "schema-formula-value" });
+		const exprEl = parent.createEl("div", {
+			cls: "schema-formula-expr",
+			text: expression || "(no expression)",
+		});
+		const recompute = () => {
+			if (!expression) {
+				valueEl.setText("(no expression)");
+				return;
+			}
+			const result = evaluateFormula(this.plugin.app, this.file, expression);
+			valueEl.setText(result || "(empty)");
+		};
+		recompute();
+		new Setting(parent).addButton((btn) =>
+			btn.setButtonText("Recompute").onClick(() => recompute())
+		);
 	}
 
 	private renderLookup(parent: HTMLElement): void {

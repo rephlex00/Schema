@@ -126,6 +126,25 @@ export class FieldListEditor {
 					});
 				return;
 			}
+			case "Formula": {
+				const opts = (field.options ?? {}) as Record<string, unknown>;
+				new Setting(parent)
+					.setName("Expression")
+					.setDesc(
+						"JS expression evaluated on read. Free vars: `fm` (frontmatter), `file` ({path,name})."
+					)
+					.addTextArea((t) => {
+						t.setValue(typeof opts.expression === "string" ? opts.expression : "")
+							.setPlaceholder("fm.firstname + ' ' + fm.lastname")
+							.onChange((v) => {
+								const next = { ...opts, expression: v };
+								this.queueFieldUpdate(index, { options: next });
+							});
+						t.inputEl.rows = 2;
+						t.inputEl.style.fontFamily = "var(--font-monospace)";
+					});
+				return;
+			}
 			case "Select":
 			case "Cycle": {
 				const opts = (field.options ?? {}) as Record<string, unknown>;

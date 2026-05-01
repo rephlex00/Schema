@@ -25,6 +25,13 @@ export type FieldType =
 	| "Lookup"
 	| "Formula";
 
+/** Options shape for a Formula field. The expression is evaluated at read
+ *  time with the active note's frontmatter bound as `fm`. */
+export interface FormulaOptions {
+	/** JS expression. Free vars: `fm` (frontmatter dict), `file` ({path, name}). */
+	expression: string;
+}
+
 export const ALL_FIELD_TYPES: FieldType[] = [
 	"Input",
 	"Number",
@@ -41,6 +48,7 @@ export const ALL_FIELD_TYPES: FieldType[] = [
 	"MultiMedia",
 	"JSON",
 	"YAML",
+	"Formula",
 ];
 
 export interface FieldSchema {

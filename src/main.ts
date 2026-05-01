@@ -1,4 +1,5 @@
 import { Notice, Plugin, TFile } from "obsidian";
+import { exportSchemas, importSchemas } from "./lifecycle/backup";
 import { applyBodyTemplateOnRetype } from "./lifecycle/body-template";
 import { cleanFrontmatter } from "./lifecycle/clean";
 import { CreateCommandRegistry } from "./lifecycle/commands";
@@ -11,6 +12,7 @@ import { FrontmatterLookupRenderer } from "./lookup/frontmatter-renderer";
 import { SchemaLoader } from "./schema/loader";
 import type { TypeSchema } from "./schema/types";
 import { FieldPickerModal } from "./ui/field-edit-modal";
+import { QueryPlaygroundModal } from "./ui/query-playground";
 import { SchemaSettingsTab } from "./ui/settings-tab";
 
 /** Kind controls which widget renders in each type's Defaults section. */
@@ -113,6 +115,24 @@ export default class SchemaPlugin extends Plugin {
 			id: "show-loaded-types",
 			name: "Show loaded types",
 			callback: () => this.showLoadedTypes(),
+		});
+
+		this.addCommand({
+			id: "query-playground",
+			name: "Open query playground",
+			callback: () => new QueryPlaygroundModal(this).open(),
+		});
+
+		this.addCommand({
+			id: "export-schemas",
+			name: "Export schemas to JSON",
+			callback: () => void exportSchemas(this),
+		});
+
+		this.addCommand({
+			id: "import-schemas",
+			name: "Import schemas from JSON",
+			callback: () => void importSchemas(this),
 		});
 
 		this.addCommand({
