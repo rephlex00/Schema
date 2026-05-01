@@ -101,6 +101,10 @@ export interface TypeSchema {
 	lookups: LookupSchema[];
 	/** Auto-refreshed default values keyed by the global autoRefreshedFields list. Typically `icon`, `color`. */
 	defaults: Record<string, unknown>;
+	/** Whether to register a `Schema: New <name>` command for this type. Defaults
+	 *  to true (preserves backwards compat). User unticks to keep abstract /
+	 *  rarely-created types out of the command palette. */
+	exposeCreateCommand?: boolean;
 	/** Optional schema version string. */
 	version?: string;
 }

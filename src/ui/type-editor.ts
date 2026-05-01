@@ -156,6 +156,19 @@ export class TypeEditor {
 					});
 				t.inputEl.rows = 2;
 			});
+
+		new Setting(parent)
+			.setName("Create note command")
+			.setDesc(
+				"When on, `Schema: New " + schema.name + "` appears in the command palette. Untick to keep abstract or rarely-created types out of the palette."
+			)
+			.addToggle((toggle) => {
+				toggle
+					.setValue(schema.exposeCreateCommand !== false)
+					.onChange((v) => {
+						this.queue({ exposeCreateCommand: v });
+					});
+			});
 	}
 
 	private renderDefaults(parent: HTMLElement, schema: TypeSchema): void {

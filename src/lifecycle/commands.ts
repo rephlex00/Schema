@@ -25,6 +25,8 @@ export class CreateCommandRegistry {
 		const next = new Set<string>();
 		for (const schema of schemas) {
 			if (!isInstantiable(schema)) continue;
+			// Default exposeCreateCommand to true (backwards compat).
+			if (schema.exposeCreateCommand === false) continue;
 			const id = COMMAND_PREFIX + schema.name;
 			next.add(id);
 			if (this.registered.has(id)) continue;
