@@ -1,6 +1,7 @@
 import { Notice, Setting } from "obsidian";
 import type SchemaPlugin from "../main";
 import type { TypeSchema } from "../schema/types";
+import { FieldListEditor } from "./field-list-editor";
 
 /**
  * Renders one type's collapsible editor block. Provides Basics and Defaults
@@ -129,17 +130,7 @@ export class TypeEditor {
 
 	private renderFields(parent: HTMLElement, schema: TypeSchema): void {
 		parent.createEl("h5", { text: `Fields (${schema.fields.length})` });
-		// Filled in by phase 2.0-E
-		if (schema.fields.length === 0) {
-			parent.createEl("div", { cls: "schema-empty", text: "(no fields)" });
-			return;
-		}
-		const ul = parent.createEl("ul", { cls: "schema-stub-list" });
-		for (const f of schema.fields) {
-			ul.createEl("li", {
-				text: `${f.name} (${f.type})${f.promptOnCreate ? ` — prompt: "${f.promptOnCreate}"` : ""}${f.target ? ` → ${f.target}` : ""}`,
-			});
-		}
+		new FieldListEditor(this.plugin, schema.name).render(parent);
 	}
 
 	private renderLookups(parent: HTMLElement, schema: TypeSchema): void {
