@@ -5,56 +5,52 @@ import { validateAll, validateOne } from "../../src/schema/validator";
 function makeSchema(overrides: Partial<TypeSchema>): TypeSchema {
 	return {
 		name: "x",
-		sourcePath: "x.md",
+		tags: [],
 		fields: [],
 		lookups: [],
-		raw: {},
+		defaults: {},
 		...overrides,
 	};
 }
 
 describe("validateOne", () => {
-	it("flags duplicate field IDs", () => {
-		const s = makeSchema({
-			fields: [
-				{ name: "a", type: "Input", id: "abc123" },
-				{ name: "b", type: "Input", id: "abc123" },
-			],
-		});
-		const errs = validateOne(s);
-		expect(errs.some((e) => e.level === "error" && e.message.includes("abc123"))).toBe(true);
-	});
-
 	it("flags duplicate field names", () => {
 		const s = makeSchema({
 			fields: [
-				{ name: "a", type: "Input", id: "id1" },
-				{ name: "a", type: "Input", id: "id2" },
+				{ name: "a", type: "Input" },
+				{ name: "a", type: "Input" },
 			],
 		});
 		const errs = validateOne(s);
-		expect(errs.some((e) => e.level === "error" && e.message.includes("duplicate field name"))).toBe(true);
+		expect(errs.some((e) => e.message.includes("duplicate field name"))).toBe(true);
 	});
 
-	it("warns when fieldsOrder lists unknown ids", () => {
+	it("flags empty field names", () => {
 		const s = makeSchema({
-			fields: [{ name: "a", type: "Input", id: "id1" }],
-			fieldsOrder: ["id1", "ghostId"],
+			fields: [{ name: "", type: "Input" }],
 		});
 		const errs = validateOne(s);
-		expect(errs.some((e) => e.level === "warning" && e.message.includes("ghostId"))).toBe(true);
+		expect(errs.some((e) => e.message.includes("empty name"))).toBe(true);
 	});
 
-	it("warns when fields are missing from fieldsOrder", () => {
+	it("flags lookups that collide with field names", () => {
 		const s = makeSchema({
-			fields: [
-				{ name: "a", type: "Input", id: "id1" },
-				{ name: "b", type: "Input", id: "id2" },
+			fields: [{ name: "shared", type: "Input" }],
+			lookups: [{ name: "shared", query: "x", render: "block", output: "list" }],
+		});
+		const errs = validateOne(s);
+		expect(errs.some((e) => e.message.includes("collides"))).toBe(true);
+	});
+
+	it("flags duplicate lookup names", () => {
+		const s = makeSchema({
+			lookups: [
+				{ name: "lk", query: "x", render: "block", output: "list" },
+				{ name: "lk", query: "y", render: "block", output: "list" },
 			],
-			fieldsOrder: ["id1"],
 		});
 		const errs = validateOne(s);
-		expect(errs.some((e) => e.level === "warning" && e.message.includes("not listed"))).toBe(true);
+		expect(errs.length).toBeGreaterThan(0);
 	});
 });
 
@@ -73,7 +69,7 @@ describe("validateAll", () => {
 			"person",
 			makeSchema({
 				name: "person",
-				fields: [{ name: "org", type: "MultiFile", id: "id1", target: "ghost" }],
+				fields: [{ name: "org", type: "MultiFile", target: "ghost" }],
 			})
 		);
 		const result = validateAll(map);

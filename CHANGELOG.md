@@ -5,6 +5,55 @@ All notable changes to the Schema plugin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] — 2026-05-01
+
+### Breaking
+- **Source of truth flipped from filesystem to plugin settings.** The plugin no
+  longer reads `Templates/Objects/*.md` YAML. All type definitions live in
+  `data.json` and are managed through Settings → Schema.
+- Old commands removed: `Schema: Reload schemas`, `Schema: Migrate lookups to
+  block mode` (lookup render mode is toggled per-lookup in the UI now).
+- Old setting removed: `schemaFolder`. Replaced by `schemas: TypeSchema[]` and
+  `autoRefreshedFields: string[]`.
+
+### Added
+- **Settings → Schema tab is the full editor.** Global section (auto-reshelve
+  toggle, auto-refreshed-fields list, lookup runtime indicator), validation
+  issues, type list with collapsible per-type editors, "+ Add type" button.
+- **Per-type editor** with Basics (extends/folder/filename/tags), Defaults
+  (dynamic inputs per `autoRefreshedFields`), Fields (inline-expand rows with
+  type-aware widgets, up/down reorder, add/remove), Lookups (per-lookup
+  inline-expand: name/query/render/output/autoUpdate, reorder, add/remove),
+  Delete-type button.
+- **`autoRefreshedFields` global list.** A configurable set of frontmatter keys
+  (default `["icon", "color"]`) that get reset to schema defaults on every type
+  change. Add `summary` if you want it auto-reset; add any other key the user
+  wants pinned to the type.
+- `__week` variable in the create-flow render context for ISO-week filename
+  templates (e.g. `{{__year}}{{__month}}-W{{__week}}` for weekly).
+- `loader.add()` / `remove()` / `update()` / `setAll()` APIs for the Settings
+  UI to commit edits granularly.
+
+### Changed
+- `TypeSchema` shape slimmed: dropped `sourcePath`, `raw`, `fieldsOrder`, MM-
+  compat keys (`filesPaths`, `tagNames`, `mapWithTag`, `limit`). Added
+  `defaults: Record<string, unknown>` map.
+- `FieldSchema` dropped `id` field (array order is display order).
+- `cleanFrontmatter` and `buildFrontmatter` now consume the `defaults` map and
+  the global `autoRefreshedFields` list instead of hard-coded `icon`/`color`.
+- Validation simplified: tracks duplicate names, lookup-vs-field collisions,
+  extends-resolves, target-resolves, tag uniqueness across types.
+
+### Removed
+- `src/schema/parser.ts` (no YAML parsing at runtime).
+- `migrateLookupsToBlock` helper (lookup render mode is per-lookup now).
+- File-watching listeners (`vault.on()`).
+
+### Tests
+- 35 unit tests (loader, validator, liquid renderer, frontmatter builder).
+- `tests/__mocks__/obsidian.ts` provides a minimal stub of Obsidian's `Events`
+  class so loader tests run in plain Node.
+
 ## [1.0.0] — 2026-04-30
 
 ### Added (full lifecycle)

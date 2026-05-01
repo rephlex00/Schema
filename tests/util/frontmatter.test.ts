@@ -5,10 +5,10 @@ import { buildFrontmatter, renderFrontmatter } from "../../src/util/frontmatter"
 function schema(overrides: Partial<TypeSchema>): TypeSchema {
 	return {
 		name: "person",
-		sourcePath: "x.md",
+		tags: [],
 		fields: [],
 		lookups: [],
-		raw: {},
+		defaults: {},
 		...overrides,
 	};
 }
@@ -18,9 +18,9 @@ describe("buildFrontmatter", () => {
 		const fm = buildFrontmatter(
 			schema({
 				fields: [
-					{ name: "firstname", type: "Input", id: "id1" },
-					{ name: "tags", type: "Multi", id: "id2" },
-					{ name: "active", type: "Boolean", id: "id3" },
+					{ name: "firstname", type: "Input" },
+					{ name: "tags", type: "Multi" },
+					{ name: "active", type: "Boolean" },
 				],
 			}),
 			{}
@@ -36,8 +36,8 @@ describe("buildFrontmatter", () => {
 		const fm = buildFrontmatter(
 			schema({
 				fields: [
-					{ name: "firstname", type: "Input", id: "id1" },
-					{ name: "lastname", type: "Input", id: "id2" },
+					{ name: "firstname", type: "Input" },
+					{ name: "lastname", type: "Input" },
 				],
 			}),
 			{ firstname: "Phoebe", lastname: "Durkee" }
@@ -46,15 +46,14 @@ describe("buildFrontmatter", () => {
 		expect(fm.lastname).toBe("Durkee");
 	});
 
-	it("respects fieldsOrder", () => {
+	it("respects field declaration order", () => {
 		const fm = buildFrontmatter(
 			schema({
 				fields: [
-					{ name: "a", type: "Input", id: "id1" },
-					{ name: "b", type: "Input", id: "id2" },
-					{ name: "c", type: "Input", id: "id3" },
+					{ name: "c", type: "Input" },
+					{ name: "a", type: "Input" },
+					{ name: "b", type: "Input" },
 				],
-				fieldsOrder: ["id3", "id1", "id2"],
 			}),
 			{}
 		);
@@ -63,35 +62,44 @@ describe("buildFrontmatter", () => {
 		expect(keys.indexOf("a")).toBeLessThan(keys.indexOf("b"));
 	});
 
-	it("skips block-mode lookup fields", () => {
+	it("includes frontmatter-mode lookups with empty array default", () => {
 		const fm = buildFrontmatter(
 			schema({
-				fields: [{ name: "events", type: "Lookup", id: "id1" }],
-				lookups: [{ name: "events", query: "x", render: "block" }],
-			}),
-			{}
-		);
-		expect("events" in fm).toBe(false);
-	});
-
-	it("includes frontmatter-mode lookup fields with empty array default", () => {
-		const fm = buildFrontmatter(
-			schema({
-				fields: [{ name: "events", type: "Lookup", id: "id1" }],
-				lookups: [{ name: "events", query: "x", render: "frontmatter" }],
+				lookups: [{ name: "events", query: "x", render: "frontmatter", output: "list" }],
 			}),
 			{}
 		);
 		expect(fm.events).toEqual([]);
 	});
 
-	it("injects icon and color from schema when not in fields", () => {
+	it("excludes block-mode lookups from frontmatter", () => {
 		const fm = buildFrontmatter(
-			schema({ icon: "user", color: "#4A90E2" }),
+			schema({
+				lookups: [{ name: "events", query: "x", render: "block", output: "list" }],
+			}),
+			{}
+		);
+		expect("events" in fm).toBe(false);
+	});
+
+	it("applies defaults map (icon, color) when not already in fm", () => {
+		const fm = buildFrontmatter(
+			schema({ defaults: { icon: "user", color: "#4A90E2" } }),
 			{}
 		);
 		expect(fm.icon).toBe("user");
 		expect(fm.color).toBe("#4A90E2");
+	});
+
+	it("does not overwrite a prompted value with a defaults entry", () => {
+		const fm = buildFrontmatter(
+			schema({
+				fields: [{ name: "icon", type: "Input" }],
+				defaults: { icon: "from-defaults" },
+			}),
+			{ icon: "from-prompt" }
+		);
+		expect(fm.icon).toBe("from-prompt");
 	});
 });
 

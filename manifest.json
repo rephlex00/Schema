@@ -1,7 +1,7 @@
 {
   "id": "schema",
   "name": "Schema",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "minAppVersion": "1.4.0",
   "description": "Typed-note workflow for Obsidian — define object types in YAML, get auto-reshelve on type change, native lookups, and a single source of truth for schema, folder, filename, and prompts.",
   "author": "rephlex00",

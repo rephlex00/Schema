@@ -1,8 +1,6 @@
 # Schema
 
-A typed-note workflow for Obsidian. Define object types in one YAML file per type; get auto-reshelve on `type:` change, native lookups (frontmatter or inline blocks), in-app type management, and creation commands per type.
-
-> **Status: 1.0.0** — full feature set built. Pending: vault-side migration off Metadata Menu / Workflow Objects, community-plugin submission.
+A typed-note workflow for Obsidian. Define object types in the plugin settings; get auto-reshelve on `type:` change, native lookups (frontmatter or inline blocks), creation commands per type, and one source of truth for schema, folder, filename, prompts, and visual defaults.
 
 ## Why
 
@@ -15,46 +13,36 @@ A typical typed-note workflow in Obsidian today threads through four plugins:
 | How does a new `person` get created? | Templater + QuickAdd |
 | What happens when you change `type:`? | Two manual commands |
 
-Schema collapses all of that into one source of truth (`Templates/Objects/<name>.md`) and ships the lifecycle as native subsystems.
+Schema collapses all of that into one source of truth (the plugin's Settings → Schema tab) and ships the lifecycle as native subsystems.
 
-## Schema format
+## Defining a type
 
-```yaml
----
-type: person
-extends: fact
-folder: Facts/People
-icon: user
-color: "#4A90E2"
-filename: "{{firstname}} {{lastname}}"
-tags: [type/person]
-fields:
-  - { name: firstname, type: Input, id: yRU3iU, promptOnCreate: "First name" }
-  - { name: lastname,  type: Input, id: LuLVcc, promptOnCreate: "Last name" }
-  - { name: relationship, type: Select, id: jTWW4m, options: { valuesListNotePath: Templates/Definitions/relationships.md } }
-  - { name: organization, type: MultiFile, id: 9Qr5bx, target: organization }
-lookups:
-  moments_with_me:
-    query: dv.pages('"Moments"').filter(m => m.people && m.people.some(p => p.path === current.file.path))
-    render: block
-    output: list
----
-```
+**Settings → Schema → "+ Add type"**. Each type expands inline:
 
-**New keys** (Schema-only):
-- `folder` — single string folder for instances (replaces MM `filesPaths`)
-- `filename` — liquid template for new-note filenames; `{{var|filter}}` substitution; built-in filters: `lower`, `upper`, `slug`, `slice`, `year`
-- `tags` — array of type/* tags (replaces MM `tagNames`)
-- `fields[*].promptOnCreate` — prompt label for `Schema: New <type>`
-- `fields[*].target` — constrains File/MultiFile pickers to instances of named fileClass
-- `lookups[*].render` — `frontmatter` (writes to YAML) or `block` (renders inline via code block)
-- `lookups[*].output` — `list`, `bullet-list`, or `count`
+- **Basics**: name, extends, folder, filename template, tags
+- **Defaults**: per-type values for whichever frontmatter keys you've designated as auto-refreshed (icon and color by default; configurable globally)
+- **Fields**: inline-expand rows, type-aware widgets (Input, Number, Boolean, Select, MultiFile/File with target type, Date/Time, etc.), with `promptOnCreate` labels for the create flow
+- **Lookups**: dataview-style queries with per-lookup choice of frontmatter or live block rendering
 
-**MM-compatible keys** load as-is. Existing fileClasses don't need migration.
+That's it. No YAML files to edit, no JSON to hand-write.
+
+## Lifecycle
+
+When you change a note's `type:` value (typing it directly or applying a `#type/<name>` tag), the plugin atomically:
+1. Moves the file to the new type's folder
+2. Strips frontmatter keys not in the new schema
+3. Adds empty placeholders for missing required fields
+4. Resets auto-refreshed fields (icon, color) from the new type's defaults
+
+When you run `Schema: New <type>` from the command palette:
+1. The plugin prompts for any field with `promptOnCreate`
+2. Renders the filename template
+3. Places the file in the configured folder
+4. Opens it
 
 ## Lookup output modes
 
-**Frontmatter mode** (the MM default): result is written into the entity note's YAML.
+**Frontmatter mode**: result is written into the entity note's YAML.
 
 ```yaml
 moments_with_me:
@@ -64,40 +52,42 @@ moments_with_me:
 
 **Block mode**: place a code block in the note body; the plugin renders the result live.
 
-```markdown
+````markdown
 ## Moments
 
-\`\`\`schema-lookup
+```schema-lookup
 moments_with_me
-\`\`\`
 ```
+````
 
 The block re-renders as data changes; no frontmatter writes, no git noise.
+
+## Auto-refreshed fields
+
+A global setting (`autoRefreshedFields`, default `["icon", "color"]`) lists frontmatter keys that always reset to the type's defaults whenever a note is reshelved or retyped. Add `summary` if you want a per-type default summary; add any custom key you want pinned to the type. The Defaults section of each type editor shows an input per key in this list.
 
 ## Commands
 
 | Command | Description |
 |---|---|
-| `Schema: New <type>` | One per instantiable type (any with a `folder:` set). Prompts → renders filename → places in folder → opens. |
+| `Schema: New <type>` | One per type with a folder set. Prompts → filename → folder → open. |
 | `Schema: Edit field` | Pick a field on the active note (fuzzy), open type-aware editor. |
 | `Schema: Reshelve and clean active file` | Manual reshelve+clean for one file. |
 | `Schema: Refresh frontmatter lookups (vault-wide)` | Re-run all frontmatter-mode lookups across the vault. |
-| `Schema: Migrate lookups to block mode` | Bulk-convert frontmatter-mode lookups to block mode. |
-| `Schema: Reload schemas` | Re-scan `Templates/Objects/`. |
 | `Schema: Show loaded types` | Console summary. |
 
 ## Settings
 
 | Setting | Default | Description |
 |---|---|---|
-| Schema folder | `Templates/Objects` | Where fileClass definitions live. |
 | Auto-reshelve on type change | on | When set, editing a note's `type:` value triggers reshelve+clean automatically. |
+| Auto-refreshed frontmatter fields | `["icon", "color"]` | Comma-separated list of keys that get reset to schema defaults on every type change. |
 
-The settings tab also shows every loaded type with editable folder / filename / icon / color, plus any validation issues.
+The Settings tab also shows every loaded type with editable folder / filename / icon / color / fields / lookups, plus any validation issues.
 
 ## Lookup query runtime
 
-If [Dataview](https://github.com/blacksmithgu/obsidian-dataview) is installed, queries execute via its JS API (full DataArray surface).
+If [Dataview](https://github.com/blacksmithgu/obsidian-dataview) is installed, queries execute via its JS API.
 
 If not, a built-in fallback handles a restricted-but-real-world-useful subset:
 - `dv.pages('"FOLDER"').filter(callback)` — entry shape
