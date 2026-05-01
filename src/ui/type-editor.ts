@@ -2,6 +2,7 @@ import { Notice, Setting } from "obsidian";
 import type SchemaPlugin from "../main";
 import type { TypeSchema } from "../schema/types";
 import { FieldListEditor } from "./field-list-editor";
+import { LookupListEditor } from "./lookup-list-editor";
 
 /**
  * Renders one type's collapsible editor block. Provides Basics and Defaults
@@ -135,17 +136,7 @@ export class TypeEditor {
 
 	private renderLookups(parent: HTMLElement, schema: TypeSchema): void {
 		parent.createEl("h5", { text: `Lookups (${schema.lookups.length})` });
-		// Filled in by phase 2.0-F
-		if (schema.lookups.length === 0) {
-			parent.createEl("div", { cls: "schema-empty", text: "(no lookups)" });
-			return;
-		}
-		const ul = parent.createEl("ul", { cls: "schema-stub-list" });
-		for (const l of schema.lookups) {
-			ul.createEl("li", {
-				text: `${l.name} — ${l.render}/${l.output}`,
-			});
-		}
+		new LookupListEditor(this.plugin, schema.name).render(parent);
 	}
 
 	private renderDelete(parent: HTMLElement, schema: TypeSchema): void {
