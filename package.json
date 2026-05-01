@@ -1,11 +1,13 @@
 {
   "name": "obsidian-schema",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Typed-note workflow for Obsidian.",
   "main": "main.js",
   "scripts": {
     "dev": "node esbuild.config.mjs",
     "build": "tsc --noEmit --skipLibCheck && node esbuild.config.mjs production",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "deploy": "node esbuild.config.mjs production && cp main.js manifest.json styles.css \"/Users/jamesdurkee/Documents/Obsidian/Personal New/.obsidian/plugins/schema/\" 2>/dev/null || true"
   },
   "keywords": [
@@ -19,11 +21,13 @@
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^20.0.0",
+    "@vitest/ui": "^4.1.5",
     "builtin-modules": "^3.3.0",
     "esbuild": "^0.21.0",
     "obsidian": "latest",
     "tslib": "^2.6.0",
-    "typescript": "^5.4.0"
+    "typescript": "^5.4.0",
+    "vitest": "^4.1.5"
   },
   "dependencies": {
     "@types/js-yaml": "^4.0.9",
