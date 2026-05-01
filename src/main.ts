@@ -5,24 +5,25 @@ import { reshelveToSchema } from "./lifecycle/reshelve";
 import { TypeChangeWatcher } from "./lifecycle/watcher";
 import { registerBlockRenderer } from "./lookup/block-renderer";
 import { LookupEngine } from "./lookup/engine";
-import {
-	FrontmatterLookupRenderer,
-	migrateLookupsToBlock,
-} from "./lookup/frontmatter-renderer";
+import { FrontmatterLookupRenderer } from "./lookup/frontmatter-renderer";
 import { SchemaLoader } from "./schema/loader";
 import type { TypeSchema } from "./schema/types";
 import { FieldPickerModal } from "./ui/field-edit-modal";
 import { SchemaSettingsTab } from "./ui/settings-tab";
 
-interface SchemaSettings {
-	/** Vault-relative folder where fileClass definitions are stored. */
-	schemaFolder: string;
-	/** Auto-reshelve a file when its `type:` frontmatter changes. (Phase 3.) */
+export interface SchemaSettings {
+	/** All registered type schemas. The Settings tab is the canonical editor. */
+	schemas: TypeSchema[];
+	/** Frontmatter keys (e.g. icon, color) that get reset to schema.defaults
+	 *  values whenever a note's type changes. */
+	autoRefreshedFields: string[];
+	/** Auto-reshelve a file when its `type:` frontmatter changes. */
 	autoReshelveOnTypeChange: boolean;
 }
 
 const DEFAULT_SETTINGS: SchemaSettings = {
-	schemaFolder: "Templates/Objects",
+	schemas: [],
+	autoRefreshedFields: ["icon", "color"],
 	autoReshelveOnTypeChange: true,
 };
 
@@ -37,9 +38,7 @@ export default class SchemaPlugin extends Plugin {
 	async onload() {
 		await this.loadSettings();
 
-		this.loader = new SchemaLoader(this.app, {
-			schemaFolder: this.settings.schemaFolder,
-		});
+		this.loader = new SchemaLoader();
 		this.createCommands = new CreateCommandRegistry(this);
 		this.typeWatcher = new TypeChangeWatcher(this);
 		this.lookups = new LookupEngine(this.app);
@@ -49,43 +48,36 @@ export default class SchemaPlugin extends Plugin {
 
 		this.addSettingTab(new SchemaSettingsTab(this.app, this));
 
-		// Defer initial schema scan until the vault has finished indexing,
-		// so cachedRead returns up-to-date content.
 		this.app.workspace.onLayoutReady(() => {
-			void this.loader.start().then(() => {
-				const count = this.loader.getAll().length;
-				const errs = this.loader.getValidationErrors().filter((e) => e.level === "error");
-				if (errs.length > 0) {
-					new Notice(`Schema: ${count} types loaded, ${errs.length} validation error(s) — see console.`, 5000);
-					console.warn("[schema] validation errors:", errs);
-				} else {
-					console.log(`[schema] loaded ${count} types from ${this.settings.schemaFolder}`);
-				}
-				this.createCommands.refresh(this.loader.getAll());
-				this.typeWatcher.start();
-				this.fmLookupRenderer.start();
-				console.log(
-					`[schema] lookup runtime: ${this.lookups.usingDataview() ? "dataview" : "builtin"}`
+			this.loader.start(this.settings.schemas);
+			const count = this.loader.getAll().length;
+			const errs = this.loader.getValidationErrors().filter((e) => e.level === "error");
+			if (errs.length > 0) {
+				new Notice(
+					`Schema: ${count} types loaded, ${errs.length} validation error(s) — see console.`,
+					5000
 				);
-			});
+				console.warn("[schema] validation errors:", errs);
+			} else {
+				console.log(`[schema] loaded ${count} types from settings`);
+			}
+			this.createCommands.refresh(this.loader.getAll());
+			this.typeWatcher.start();
+			this.fmLookupRenderer.start();
+			console.log(
+				`[schema] lookup runtime: ${this.lookups.usingDataview() ? "dataview" : "builtin"}`
+			);
 		});
 
 		this.registerEvent(
 			this.loader.on("schema-changed", ((schemas: TypeSchema[]) => {
 				console.log(`[schema] schema-changed: ${schemas.length} types`);
 				this.createCommands.refresh(schemas);
+				// Persist schema changes to data.json
+				this.settings.schemas = schemas;
+				void this.saveSettings();
 			}) as (...data: unknown[]) => unknown)
 		);
-
-		this.addCommand({
-			id: "reload-schemas",
-			name: "Reload schemas",
-			callback: async () => {
-				await this.loader.fullReload();
-				const count = this.loader.getAll().length;
-				new Notice(`Schema: reloaded ${count} types.`);
-			},
-		});
 
 		this.addCommand({
 			id: "show-loaded-types",
@@ -102,12 +94,6 @@ export default class SchemaPlugin extends Plugin {
 					`Schema: refreshed lookups — ${result.updated} files updated, ${result.errors} errors.`
 				);
 			},
-		});
-
-		this.addCommand({
-			id: "migrate-lookups-to-block",
-			name: "Migrate lookups to block mode",
-			callback: () => migrateLookupsToBlock(this),
 		});
 
 		this.addCommand({
@@ -162,7 +148,7 @@ export default class SchemaPlugin extends Plugin {
 				? this.app.vault.getAbstractFileByPath(moveResult.to)
 				: file;
 		const target = moved instanceof TFile ? moved : file;
-		const result = await cleanFrontmatter(this.app, target, schema);
+		const result = await cleanFrontmatter(this.app, target, schema, this.settings.autoRefreshedFields);
 		const moveSummary =
 			moveResult && moveResult.from !== moveResult.to ? ` moved → ${moveResult.to}` : "";
 		new Notice(
@@ -173,7 +159,7 @@ export default class SchemaPlugin extends Plugin {
 	private showLoadedTypes() {
 		const schemas = this.loader.getAll();
 		if (schemas.length === 0) {
-			new Notice("Schema: no types loaded. Check Templates/Objects/.");
+			new Notice("Schema: no types loaded. Add some via Settings → Schema.");
 			return;
 		}
 		const lines = schemas.map((s) => {

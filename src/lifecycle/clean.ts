@@ -1,35 +1,29 @@
 import { App, TFile } from "obsidian";
 import type { FieldSchema, TypeSchema } from "../schema/types";
 
-const UNIVERSAL_KEYS = new Set(["type", "title", "icon", "color", "summary", "aliases"]);
+const UNIVERSAL_KEYS = new Set(["type", "title", "summary", "aliases"]);
 
 /**
  * Compute the set of frontmatter keys allowed by a TypeSchema.
  *
- * Includes: `type`, universal keys, all field names, and all lookup names with
- * `render: frontmatter`. Does NOT include lookups with `render: block` (those
- * live in body code blocks).
+ * Includes: `type`, universal keys, all field names, lookup names with
+ * render: frontmatter, and the auto-refreshed fields (icon/color and any
+ * user-added).
  */
-export function allowedKeys(schema: TypeSchema): Set<string> {
+export function allowedKeys(schema: TypeSchema, autoRefreshedFields: string[]): Set<string> {
 	const keys = new Set<string>(UNIVERSAL_KEYS);
 	for (const f of schema.fields) {
-		if (f.type === "Lookup") {
-			const lookup = schema.lookups.find((l) => l.name === f.name);
-			if (lookup?.render === "block") continue;
-		}
 		keys.add(f.name);
 	}
 	for (const lookup of schema.lookups) {
-		if (lookup.render === "frontmatter" || lookup.render === undefined) {
+		if (lookup.render === "frontmatter") {
 			keys.add(lookup.name);
 		}
 	}
+	for (const k of autoRefreshedFields) keys.add(k);
 	return keys;
 }
 
-/**
- * Default placeholder for a field that's missing from a note's frontmatter.
- */
 function defaultForField(field: FieldSchema): unknown {
 	const arrayLike = ["MultiFile", "Multi", "MultiMedia", "YAML", "Lookup"];
 	if (arrayLike.includes(field.type)) return [];
@@ -39,20 +33,19 @@ function defaultForField(field: FieldSchema): unknown {
 }
 
 /**
- * Strip frontmatter keys not allowed by `schema`, and add empty placeholders
- * for missing fields. Returns a summary of what changed.
- *
- * The function uses Obsidian's `processFrontMatter` so the file is updated in
- * place atomically.
+ * Strip frontmatter keys not allowed by `schema`, add empty placeholders for
+ * missing fields, and refresh auto-refreshed fields (icon/color/etc.) from
+ * `schema.defaults`.
  */
 export async function cleanFrontmatter(
 	app: App,
 	file: TFile,
-	schema: TypeSchema
+	schema: TypeSchema,
+	autoRefreshedFields: string[]
 ): Promise<{ removed: string[]; added: string[] }> {
 	const removed: string[] = [];
 	const added: string[] = [];
-	const allowed = allowedKeys(schema);
+	const allowed = allowedKeys(schema, autoRefreshedFields);
 
 	await app.fileManager.processFrontMatter(file, (fm) => {
 		// Drop disallowed keys.
@@ -64,22 +57,20 @@ export async function cleanFrontmatter(
 		}
 		// Add missing fields with default values.
 		for (const field of schema.fields) {
-			if (field.type === "Lookup") {
-				const lookup = schema.lookups.find((l) => l.name === field.name);
-				if (lookup?.render === "block") continue;
-			}
 			if (!(field.name in fm)) {
 				fm[field.name] = defaultForField(field);
 				added.push(field.name);
 			}
 		}
-		// Ensure type matches the schema, and refresh visual category fields
-		// (icon/color) to the new schema's defaults — these belong to the type,
-		// not to the individual note. Stale values from an old type would be
-		// misleading.
+		// Refresh auto-refreshed fields from the schema's defaults map.
+		// These belong to the type, not the individual note — stale values
+		// from an old type would be misleading.
 		fm.type = schema.name;
-		if (schema.icon) fm.icon = schema.icon;
-		if (schema.color) fm.color = schema.color;
+		const defaults = schema.defaults ?? {};
+		for (const key of autoRefreshedFields) {
+			const v = defaults[key];
+			if (v !== undefined && v !== "") fm[key] = v;
+		}
 	});
 
 	return { removed, added };

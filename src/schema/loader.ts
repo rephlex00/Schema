@@ -1,137 +1,110 @@
-import { Events, type App, type EventRef, type TAbstractFile, TFile } from "obsidian";
-import { parseFileClass, typeNameFromPath } from "./parser";
+import { Events } from "obsidian";
 import type { TypeSchema, ValidationError } from "./types";
 import { validateAll } from "./validator";
 
-export interface SchemaLoaderOptions {
-	/** Vault-relative folder where fileClass definitions live. */
-	schemaFolder: string;
-}
-
-const RELOAD_DEBOUNCE_MS = 150;
-
 /**
- * Reads and watches the user's fileClass definitions, exposing them as a typed
- * in-memory map. Emits `schema-loaded` after the initial scan and `schema-changed`
- * whenever a file under `schemaFolder` is added/modified/deleted.
+ * In-memory registry of TypeSchema entries. v2: schemas come from plugin
+ * settings (data.json), not from vault files. The Settings tab mutates this
+ * registry directly via setAll/add/update/remove; lifecycle subsystems read
+ * via get / getAll.
  *
- * Events are emitted on this instance (subclass of Events) — listeners attach
- * via `loader.on("schema-loaded", () => ...)`.
+ * Emits `schema-loaded` once after start() and `schema-changed` on any commit.
  */
 export class SchemaLoader extends Events {
-	private readonly app: App;
-	private readonly schemaFolder: string;
-	private readonly schemas = new Map<string, TypeSchema>();
+	private schemas = new Map<string, TypeSchema>();
 	private lastErrors: ValidationError[] = [];
-	private reloadTimer: number | null = null;
-	private vaultRefs: EventRef[] = [];
 
-	constructor(app: App, options: SchemaLoaderOptions) {
-		super();
-		this.app = app;
-		this.schemaFolder = options.schemaFolder.replace(/\/$/, "");
-	}
-
-	/** Returns a snapshot of currently-loaded schemas. */
 	getAll(): TypeSchema[] {
 		return Array.from(this.schemas.values());
 	}
 
-	/** Returns one schema by type name, or undefined. */
-	get(typeName: string): TypeSchema | undefined {
-		return this.schemas.get(typeName);
+	get(name: string): TypeSchema | undefined {
+		return this.schemas.get(name);
 	}
 
-	/** Returns the most recent validation errors from the last full scan. */
 	getValidationErrors(): ValidationError[] {
 		return [...this.lastErrors];
 	}
 
-	/** Returns the configured schema folder (vault-relative). */
-	getSchemaFolder(): string {
-		return this.schemaFolder;
-	}
-
 	/**
-	 * Initial scan + start watching. Idempotent.
+	 * Initial load. Pass the array of schemas from plugin settings.
 	 */
-	async start(): Promise<void> {
-		await this.fullReload();
-
-		this.vaultRefs.push(
-			this.app.vault.on("create", (file) => this.onVaultEvent(file)),
-			this.app.vault.on("modify", (file) => this.onVaultEvent(file)),
-			this.app.vault.on("delete", (file) => this.onVaultEvent(file)),
-			this.app.vault.on("rename", (file, oldPath) => this.onVaultEvent(file, oldPath))
-		);
-	}
-
-	/** Stop watching and clear in-memory state. */
-	stop(): void {
-		for (const ref of this.vaultRefs) this.app.vault.offref(ref);
-		this.vaultRefs = [];
-		if (this.reloadTimer != null) {
-			window.clearTimeout(this.reloadTimer);
-			this.reloadTimer = null;
-		}
+	start(schemas: TypeSchema[]): void {
 		this.schemas.clear();
-		this.lastErrors = [];
-	}
-
-	/** Force a full re-scan of the schema folder. */
-	async fullReload(): Promise<void> {
-		this.schemas.clear();
-		const files = this.collectSchemaFiles();
-		for (const file of files) {
-			await this.loadOne(file);
+		for (const s of schemas) {
+			this.schemas.set(s.name, ensureShape(s));
 		}
 		this.runValidation();
 		this.trigger("schema-loaded", this.getAll());
 	}
 
-	private collectSchemaFiles(): TFile[] {
-		const folder = this.schemaFolder;
-		return this.app.vault
-			.getMarkdownFiles()
-			.filter((f) => f.path === folder || f.path.startsWith(folder + "/"));
+	stop(): void {
+		this.schemas.clear();
+		this.lastErrors = [];
 	}
 
-	private async loadOne(file: TFile): Promise<void> {
-		const source = await this.app.vault.cachedRead(file);
-		const schema = parseFileClass(file.path, source);
-		if (schema) this.schemas.set(schema.name, schema);
+	/** Replace the entire schema set. Used by the Settings UI on bulk edits. */
+	setAll(schemas: TypeSchema[]): void {
+		this.schemas.clear();
+		for (const s of schemas) {
+			this.schemas.set(s.name, ensureShape(s));
+		}
+		this.runValidation();
+		this.trigger("schema-changed", this.getAll());
 	}
 
-	private isSchemaFile(file: TAbstractFile): boolean {
-		if (!(file instanceof TFile)) return false;
-		if (file.extension !== "md") return false;
-		const folder = this.schemaFolder;
-		return file.path === folder || file.path.startsWith(folder + "/");
+	/** Insert or replace a single type. */
+	add(schema: TypeSchema): void {
+		this.schemas.set(schema.name, ensureShape(schema));
+		this.runValidation();
+		this.trigger("schema-changed", this.getAll());
 	}
 
-	private onVaultEvent(file: TAbstractFile, oldPath?: string): void {
-		// Trigger when either the new or old path falls inside the schema folder.
-		const inFolder = this.isSchemaFile(file);
-		const wasInFolder =
-			oldPath != null &&
-			(oldPath === this.schemaFolder || oldPath.startsWith(this.schemaFolder + "/"));
-		if (!inFolder && !wasInFolder) return;
-		this.scheduleReload();
+	/** Remove a type by name. No-op if not present. */
+	remove(name: string): boolean {
+		const removed = this.schemas.delete(name);
+		if (removed) {
+			this.runValidation();
+			this.trigger("schema-changed", this.getAll());
+		}
+		return removed;
 	}
 
-	private scheduleReload(): void {
-		if (this.reloadTimer != null) window.clearTimeout(this.reloadTimer);
-		this.reloadTimer = window.setTimeout(() => {
-			this.reloadTimer = null;
-			void this.fullReload().then(() => this.trigger("schema-changed", this.getAll()));
-		}, RELOAD_DEBOUNCE_MS);
+	/**
+	 * Apply a partial update to one type. The update object is shallow-merged
+	 * onto the existing schema; arrays/objects in `partial` REPLACE the
+	 * existing values rather than merging.
+	 */
+	update(name: string, partial: Partial<TypeSchema>): TypeSchema | null {
+		const cur = this.schemas.get(name);
+		if (!cur) return null;
+		const next = ensureShape({ ...cur, ...partial, name: cur.name });
+		this.schemas.set(name, next);
+		this.runValidation();
+		this.trigger("schema-changed", this.getAll());
+		return next;
 	}
 
 	private runValidation(): void {
-		const result = validateAll(this.schemas);
-		this.lastErrors = result.errors;
+		this.lastErrors = validateAll(this.schemas).errors;
 	}
 }
 
-// Helper kept for callers that want to derive a name without instantiating a loader.
-export { typeNameFromPath };
+/**
+ * Normalize a TypeSchema-shaped object: fill in defaults for missing optional
+ * collections so callers can rely on `.fields`, `.lookups`, `.tags`, `.defaults`
+ * being defined arrays/objects.
+ */
+function ensureShape(s: TypeSchema): TypeSchema {
+	return {
+		name: s.name,
+		extends: s.extends,
+		folder: s.folder,
+		filename: s.filename,
+		tags: Array.isArray(s.tags) ? [...s.tags] : [],
+		fields: Array.isArray(s.fields) ? [...s.fields] : [],
+		lookups: Array.isArray(s.lookups) ? [...s.lookups] : [],
+		defaults: s.defaults && typeof s.defaults === "object" ? { ...s.defaults } : {},
+		version: s.version,
+	};
+}

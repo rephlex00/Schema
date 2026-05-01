@@ -76,7 +76,12 @@ export class TypeChangeWatcher {
 			const movedFile = this.plugin.app.vault.getAbstractFileByPath(moveResult?.to ?? file.path);
 			const target = movedFile instanceof TFile ? movedFile : file;
 
-			const cleanResult = await cleanFrontmatter(this.plugin.app, target, schema);
+			const cleanResult = await cleanFrontmatter(
+				this.plugin.app,
+				target,
+				schema,
+				this.plugin.settings.autoRefreshedFields
+			);
 
 			// Update lastSeenType for the new path (file.path got mutated by rename).
 			if (moveResult && moveResult.from !== moveResult.to) {
