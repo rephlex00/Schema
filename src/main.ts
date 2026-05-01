@@ -11,6 +11,7 @@ import {
 } from "./lookup/frontmatter-renderer";
 import { SchemaLoader } from "./schema/loader";
 import type { TypeSchema } from "./schema/types";
+import { SchemaSettingsTab } from "./ui/settings-tab";
 
 interface SchemaSettings {
 	/** Vault-relative folder where fileClass definitions are stored. */
@@ -44,6 +45,8 @@ export default class SchemaPlugin extends Plugin {
 		this.fmLookupRenderer = new FrontmatterLookupRenderer(this);
 
 		registerBlockRenderer(this);
+
+		this.addSettingTab(new SchemaSettingsTab(this.app, this));
 
 		// Defer initial schema scan until the vault has finished indexing,
 		// so cachedRead returns up-to-date content.

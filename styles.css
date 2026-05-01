@@ -1,2 +1,34 @@
 /* Schema plugin styles */
-/* Reserved for future UI components — kept empty so manifest.json's styles.css reference is valid. */
+
+.schema-type-block {
+  border-top: 1px solid var(--background-modifier-border);
+  padding: 8px 0 12px 0;
+  margin-top: 8px;
+}
+
+.schema-type-block h4 {
+  margin: 4px 0 2px 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.schema-type-meta {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  font-family: var(--font-monospace);
+}
+
+.schema-lookup-block {
+  margin: 8px 0;
+}
+
+.schema-lookup-block ul {
+  margin: 0 0 0 16px;
+  padding: 0;
+  list-style: disc;
+}
+
+.schema-lookup-block li {
+  margin: 2px 0;
+}
