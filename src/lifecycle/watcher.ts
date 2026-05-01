@@ -1,5 +1,6 @@
 import { Notice, TFile, type EventRef } from "obsidian";
 import type SchemaPlugin from "../main";
+import { applyBodyTemplateOnRetype } from "./body-template";
 import { cleanFrontmatter } from "./clean";
 import { resolveFolder, reshelveToSchema } from "./reshelve";
 
@@ -99,6 +100,9 @@ export class TypeChangeWatcher {
 				schema,
 				this.plugin.settings.autoRefreshedFields
 			);
+
+			// Apply body template (asks user to replace/merge if body has content).
+			await applyBodyTemplateOnRetype(this.plugin, target, schema);
 
 			// Update lastSeenType for the new path (file.path got mutated by rename).
 			if (moveResult && moveResult.from !== moveResult.to) {

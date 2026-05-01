@@ -104,6 +104,17 @@ export class TypeEditor {
 			});
 
 		new Setting(parent)
+			.setName("Body template")
+			.setDesc(
+				"Path to a Templater file (vault-relative). Applied on creation; on type-change, asks before merging if body has content. Requires the Templater plugin."
+			)
+			.addText((t) => {
+				t.setValue(schema.bodyTemplate ?? "")
+					.setPlaceholder("e.g. Templates/Body/event.md")
+					.onChange((v) => this.queue({ bodyTemplate: v.trim() || undefined }));
+			});
+
+		new Setting(parent)
 			.setName("Tags")
 			.setDesc("Auto-classification tags. One per line.")
 			.addTextArea((t) => {

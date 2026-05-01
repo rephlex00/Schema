@@ -4,6 +4,7 @@ import type { TypeSchema } from "../schema/types";
 import { promptForValues, type PromptField } from "../ui/prompt-modal";
 import { buildFrontmatter, renderFrontmatter } from "../util/frontmatter";
 import { renderTemplate } from "../util/liquid";
+import { applyBodyTemplateOnCreate } from "./body-template";
 
 const TIMESTAMP_DEFAULT_FILENAME = "{{__timestamp}}";
 
@@ -65,6 +66,9 @@ export async function createInstance(plugin: SchemaPlugin, schema: TypeSchema): 
 		new Notice(`Schema: failed to create ${targetPath}. See console.`);
 		return null;
 	}
+
+	// Apply body template if the schema declares one.
+	await applyBodyTemplateOnCreate(plugin, file, resolved);
 
 	const leaf = plugin.app.workspace.getLeaf();
 	await leaf.openFile(file);

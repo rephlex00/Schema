@@ -79,6 +79,9 @@ export interface TypeSchema {
 	folder?: string;
 	/** Liquid filename template. If omitted, instances get a timestamp filename. */
 	filename?: string;
+	/** Path (vault-relative) to a Templater template file used to populate the
+	 *  body of new notes (and on type-change). Optional — empty means no body. */
+	bodyTemplate?: string;
 	/** Tags that auto-classify a note as this type. */
 	tags: string[];
 	/** Data fields the type defines. Excludes lookups. */

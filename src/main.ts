@@ -1,4 +1,5 @@
 import { Notice, Plugin, TFile } from "obsidian";
+import { applyBodyTemplateOnRetype } from "./lifecycle/body-template";
 import { cleanFrontmatter } from "./lifecycle/clean";
 import { CreateCommandRegistry } from "./lifecycle/commands";
 import { FolderMappingWatcher } from "./lifecycle/folder-mapping-watcher";
@@ -180,6 +181,7 @@ export default class SchemaPlugin extends Plugin {
 				: file;
 		const target = moved instanceof TFile ? moved : file;
 		const result = await cleanFrontmatter(this.app, target, resolved, this.settings.autoRefreshedFields);
+		await applyBodyTemplateOnRetype(this, target, resolved);
 		const moveSummary =
 			moveResult && moveResult.from !== moveResult.to ? ` moved → ${moveResult.to}` : "";
 		new Notice(
