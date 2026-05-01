@@ -20,12 +20,15 @@ export function isInstantiable(schema: TypeSchema): boolean {
  * TFile, or null if the user canceled or creation failed.
  */
 export async function createInstance(plugin: SchemaPlugin, schema: TypeSchema): Promise<TFile | null> {
-	if (!isInstantiable(schema)) {
+	// Resolve inheritance — children inherit fields/lookups/defaults from parents.
+	const resolved = plugin.loader.getResolved(schema.name) ?? schema;
+
+	if (!isInstantiable(resolved)) {
 		new Notice(`Schema: type "${schema.name}" has no folder set; cannot create.`);
 		return null;
 	}
 
-	const prompts = collectPrompts(schema);
+	const prompts = collectPrompts(resolved);
 	let promptedValues: Record<string, string> = {};
 	if (prompts.length > 0) {
 		const result = await promptForValues(plugin.app, `New ${schema.name}`, prompts);
@@ -34,15 +37,15 @@ export async function createInstance(plugin: SchemaPlugin, schema: TypeSchema): 
 	}
 
 	const renderContext = buildRenderContext(promptedValues);
-	const filename = pickFilename(schema, renderContext);
+	const filename = pickFilename(resolved, renderContext);
 	if (!filename) {
 		new Notice(`Schema: filename for "${schema.name}" rendered empty; aborting.`);
 		return null;
 	}
-	const folder = renderTemplate(schema.folder!, renderContext);
+	const folder = renderTemplate(resolved.folder!, renderContext);
 	const targetPath = await ensureUniquePath(plugin.app, `${folder.replace(/\/$/, "")}/${filename}.md`);
 
-	const fm = buildFrontmatter(schema, promptedValues);
+	const fm = buildFrontmatter(resolved, promptedValues);
 	const body = renderFrontmatter(fm);
 
 	await ensureFolderExists(plugin.app, folder);

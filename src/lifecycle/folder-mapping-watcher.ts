@@ -110,7 +110,7 @@ export class FolderMappingWatcher {
 
 	/** Set type and clean frontmatter, holding the inFlight lock. */
 	private async applyType(file: TFile, typeName: string): Promise<void> {
-		const schema = this.plugin.loader.get(typeName);
+		const schema = this.plugin.loader.getResolved(typeName);
 		if (!schema) {
 			new Notice(`Schema: folder maps to unknown type "${typeName}".`);
 			return;

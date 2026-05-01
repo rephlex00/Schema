@@ -66,7 +66,7 @@ export class TypeChangeWatcher {
 		if (prior === undefined) return;
 		if (prior === newType) return;
 
-		const schema = this.plugin.loader.get(newType);
+		const schema = this.plugin.loader.getResolved(newType);
 		if (!schema) {
 			new Notice(`Schema: type "${newType}" is not a known type.`);
 			return;

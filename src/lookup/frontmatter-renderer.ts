@@ -48,7 +48,7 @@ export class FrontmatterLookupRenderer {
 	}
 
 	async refreshAll(): Promise<{ updated: number; errors: number }> {
-		const schemas = this.plugin.loader.getAll();
+		const schemas = this.plugin.loader.getAllResolved();
 		const schemasByName = new Map<string, TypeSchema>(schemas.map((s) => [s.name, s]));
 
 		const candidates = this.plugin.app.vault.getMarkdownFiles();

@@ -75,7 +75,7 @@ class SchemaLookupRenderChild extends MarkdownRenderChild {
 			this.error("active file has no `type:` frontmatter");
 			return;
 		}
-		const schema = this.plugin.loader.get(type);
+		const schema = this.plugin.loader.getResolved(type);
 		if (!schema) {
 			this.error(`unknown type "${type}"`);
 			return;

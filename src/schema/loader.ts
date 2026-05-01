@@ -1,4 +1,5 @@
 import { Events } from "obsidian";
+import { resolveAll, resolveSchema } from "./resolve";
 import type { TypeSchema, ValidationError } from "./types";
 import { validateAll } from "./validator";
 
@@ -20,6 +21,22 @@ export class SchemaLoader extends Events {
 
 	get(name: string): TypeSchema | undefined {
 		return this.schemas.get(name);
+	}
+
+	/** Resolve the extends chain for a type — fields, lookups, defaults
+	 *  inherited from ancestors are merged in. Tags and name stay child-only. */
+	getResolved(name: string): TypeSchema | undefined {
+		return resolveSchema(this.schemas, name);
+	}
+
+	/** Resolved view of every type. */
+	getAllResolved(): TypeSchema[] {
+		return resolveAll(this.schemas);
+	}
+
+	/** Read-only handle to the raw map — used by inheritedFieldNames helpers. */
+	rawMap(): Map<string, TypeSchema> {
+		return this.schemas;
 	}
 
 	getValidationErrors(): ValidationError[] {

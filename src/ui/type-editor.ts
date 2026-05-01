@@ -1,5 +1,6 @@
 import { Notice, Setting, setIcon } from "obsidian";
 import type SchemaPlugin from "../main";
+import { inheritedFieldNames, inheritedLookupNames } from "../schema/resolve";
 import type { TypeSchema } from "../schema/types";
 import { FieldListEditor } from "./field-list-editor";
 import { LookupListEditor } from "./lookup-list-editor";
@@ -206,11 +207,25 @@ export class TypeEditor {
 
 	private renderFields(parent: HTMLElement, schema: TypeSchema): void {
 		parent.createEl("h5", { text: `Fields (${schema.fields.length})` });
+		const inherited = inheritedFieldNames(this.plugin.loader.rawMap(), schema.name);
+		if (inherited.length > 0) {
+			parent.createEl("div", {
+				cls: "schema-inheritance-hint",
+				text: `+ inherited from ${schema.extends}: ${inherited.join(", ")}`,
+			});
+		}
 		new FieldListEditor(this.plugin, schema.name).render(parent);
 	}
 
 	private renderLookups(parent: HTMLElement, schema: TypeSchema): void {
 		parent.createEl("h5", { text: `Lookups (${schema.lookups.length})` });
+		const inherited = inheritedLookupNames(this.plugin.loader.rawMap(), schema.name);
+		if (inherited.length > 0) {
+			parent.createEl("div", {
+				cls: "schema-inheritance-hint",
+				text: `+ inherited from ${schema.extends}: ${inherited.join(", ")}`,
+			});
+		}
 		new LookupListEditor(this.plugin, schema.name).render(parent);
 	}
 

@@ -1,3 +1,4 @@
+import { detectExtendsCycle } from "./resolve";
 import type { TypeSchema, ValidationError, ValidationResult } from "./types";
 
 /**
@@ -65,6 +66,15 @@ export function validateAll(schemas: Map<string, TypeSchema>): ValidationResult 
 				type: schema.name,
 				level: "error",
 				message: `extends "${schema.extends}" but no such type is defined`,
+			});
+		}
+
+		const cycle = detectExtendsCycle(schemas, schema.name);
+		if (cycle) {
+			errors.push({
+				type: schema.name,
+				level: "error",
+				message: `extends chain cycles: ${cycle.join(" → ")}`,
 			});
 		}
 

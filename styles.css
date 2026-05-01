@@ -79,6 +79,14 @@
   font-family: var(--font-monospace);
 }
 
+.schema-inheritance-hint {
+  font-size: 11px;
+  color: var(--text-faint);
+  font-style: italic;
+  padding: 2px 0 6px 0;
+  font-family: var(--font-monospace);
+}
+
 .schema-validation-list {
   margin: 0 0 0 16px;
   padding: 0;

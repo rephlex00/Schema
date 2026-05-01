@@ -243,7 +243,7 @@ class SchemaFilePickerModal extends FuzzySuggestModal<TFile> {
 	getItems(): TFile[] {
 		const target = this.field.target;
 		if (!target) return this.app.vault.getMarkdownFiles();
-		const schema = this.plugin.loader.get(target);
+		const schema = this.plugin.loader.getResolved(target);
 		if (!schema?.folder) return this.app.vault.getMarkdownFiles();
 		const folder = schema.folder;
 		const prefix = folder.endsWith("/") ? folder : folder + "/";

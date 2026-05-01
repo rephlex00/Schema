@@ -134,7 +134,7 @@ export default class SchemaPlugin extends Plugin {
 				const cache = this.app.metadataCache.getFileCache(file);
 				const t = cache?.frontmatter?.type;
 				if (typeof t !== "string") return false;
-				const schema = this.loader.get(t);
+				const schema = this.loader.getResolved(t);
 				if (!schema) return false;
 				if (checking) return true;
 				new FieldPickerModal(this, file, schema).open();
@@ -151,7 +151,7 @@ export default class SchemaPlugin extends Plugin {
 				const cache = this.app.metadataCache.getFileCache(file);
 				const t = cache?.frontmatter?.type;
 				if (typeof t !== "string") return false;
-				const schema = this.loader.get(t);
+				const schema = this.loader.getResolved(t);
 				if (!schema) return false;
 				if (checking) return true;
 				void this.runManualReshelve(file, schema);
@@ -170,15 +170,16 @@ export default class SchemaPlugin extends Plugin {
 	}
 
 	private async runManualReshelve(file: TFile, schema: TypeSchema): Promise<void> {
+		const resolved = this.loader.getResolved(schema.name) ?? schema;
 		const cache = this.app.metadataCache.getFileCache(file);
 		const fm = (cache?.frontmatter as Record<string, unknown> | undefined) ?? {};
-		const moveResult = await reshelveToSchema(this.app, file, schema, fm);
+		const moveResult = await reshelveToSchema(this.app, file, resolved, fm);
 		const moved =
 			moveResult && moveResult.from !== moveResult.to
 				? this.app.vault.getAbstractFileByPath(moveResult.to)
 				: file;
 		const target = moved instanceof TFile ? moved : file;
-		const result = await cleanFrontmatter(this.app, target, schema, this.settings.autoRefreshedFields);
+		const result = await cleanFrontmatter(this.app, target, resolved, this.settings.autoRefreshedFields);
 		const moveSummary =
 			moveResult && moveResult.from !== moveResult.to ? ` moved → ${moveResult.to}` : "";
 		new Notice(
