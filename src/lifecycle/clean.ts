@@ -73,8 +73,13 @@ export async function cleanFrontmatter(
 				added.push(field.name);
 			}
 		}
-		// Ensure type matches the schema.
+		// Ensure type matches the schema, and refresh visual category fields
+		// (icon/color) to the new schema's defaults — these belong to the type,
+		// not to the individual note. Stale values from an old type would be
+		// misleading.
 		fm.type = schema.name;
+		if (schema.icon) fm.icon = schema.icon;
+		if (schema.color) fm.color = schema.color;
 	});
 
 	return { removed, added };
