@@ -91,17 +91,17 @@ describe("resolveSchema", () => {
 
 	it("inherits folder + filename from parent when child omits", () => {
 		const map = mapOf(
-			s({ name: "moment", folder: "Moments", filename: "{{__timestamp}}" }),
+			s({ name: "moment", folder: "Moments", filename: "{{date:YYYYMMDD-HHmm}}" }),
 			s({ name: "event", extends: "moment" })
 		);
 		const r = resolveSchema(map, "event")!;
 		expect(r.folder).toBe("Moments");
-		expect(r.filename).toBe("{{__timestamp}}");
+		expect(r.filename).toBe("{{date:YYYYMMDD-HHmm}}");
 	});
 
 	it("child folder/filename override parent", () => {
 		const map = mapOf(
-			s({ name: "moment", folder: "Moments", filename: "{{__timestamp}}" }),
+			s({ name: "moment", folder: "Moments", filename: "{{date:YYYYMMDD-HHmm}}" }),
 			s({ name: "event", extends: "moment", folder: "Events", filename: "{{title}}" })
 		);
 		const r = resolveSchema(map, "event")!;
@@ -264,7 +264,7 @@ describe("inverse-relationship synthesis", () => {
 			s({ name: "person" }),
 			s({
 				name: "event",
-				folder: "Moments/{{__year}}",
+				folder: "Moments/{{date:YYYY}}",
 				fields: [
 					{ name: "people", type: "MultiFile", target: "person", inverse: "events_with_me" },
 				],

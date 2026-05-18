@@ -6,7 +6,7 @@ import { buildFrontmatter, renderFrontmatter } from "../util/frontmatter";
 import { renderTemplate } from "../util/liquid";
 import { applyBodyTemplateOnCreate } from "./body-template";
 
-const TIMESTAMP_DEFAULT_FILENAME = "{{__timestamp}}";
+const TIMESTAMP_DEFAULT_FILENAME = "{{date:YYYYMMDD-HHmm}}";
 
 /**
  * A type is "instantiable" if a user can create instances of it. Heuristic: it
@@ -92,30 +92,10 @@ function collectPrompts(schema: TypeSchema): PromptField[] {
 function buildRenderContext(prompted: Record<string, string>): Record<string, unknown> {
 	const now = new Date();
 	const pad = (n: number) => String(n).padStart(2, "0");
-	const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}`;
 	return {
 		...prompted,
-		__timestamp: stamp,
-		__year: String(now.getFullYear()),
-		__month: pad(now.getMonth() + 1),
-		__day: pad(now.getDate()),
-		__hour: pad(now.getHours()),
-		__minute: pad(now.getMinutes()),
-		__week: pad(isoWeek(now)),
 		datetime: `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`,
 	};
-}
-
-function isoWeek(date: Date): number {
-	const target = new Date(date.valueOf());
-	const dayNr = (date.getDay() + 6) % 7;
-	target.setDate(target.getDate() - dayNr + 3);
-	const firstThursday = target.valueOf();
-	target.setMonth(0, 1);
-	if (target.getDay() !== 4) {
-		target.setMonth(0, 1 + ((4 - target.getDay() + 7) % 7));
-	}
-	return Math.ceil((firstThursday - target.valueOf()) / 604800000) + 1;
 }
 
 function pickFilename(schema: TypeSchema, ctx: Record<string, unknown>): string {

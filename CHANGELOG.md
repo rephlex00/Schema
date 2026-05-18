@@ -5,6 +5,22 @@ All notable changes to the Schema plugin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Breaking
+- **Date tokens use Obsidian moment.js form.** Replaced the legacy
+  `{{__year}}`, `{{__month}}`, `{{__day}}`, `{{__hour}}`, `{{__minute}}`,
+  `{{__week}}`, and `{{__timestamp}}` placeholders with
+  `{{date:YYYY}}`, `{{date:MM}}`, `{{date:DD}}`, `{{date:HH}}`,
+  `{{date:mm}}`, `{{date:WW}}`, and `{{date:YYYYMMDD-HHmm}}` respectively.
+  The old underscore tokens are no longer resolved. Existing folder/filename
+  templates referencing them must be updated.
+
+### Changed
+- Nested types in the Settings → Objects tree now render with continuous
+  vertical guide rails, one per ancestor depth, so inheritance chains read
+  cleanly at a glance.
+
 ## [2.0.0] — 2026-05-01
 
 ### Breaking

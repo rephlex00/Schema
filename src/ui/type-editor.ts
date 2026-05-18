@@ -32,18 +32,6 @@ function buildTypeRowActions(summary: HTMLElement, onDelete: () => void): void {
 	});
 }
 
-function isoWeekNumber(date: Date): number {
-	const target = new Date(date.valueOf());
-	const dayNr = (date.getDay() + 6) % 7;
-	target.setDate(target.getDate() - dayNr + 3);
-	const firstThursday = target.valueOf();
-	target.setMonth(0, 1);
-	if (target.getDay() !== 4) {
-		target.setMonth(0, 1 + ((4 - target.getDay() + 7) % 7));
-	}
-	return Math.ceil((firstThursday - target.valueOf()) / 604800000) + 1;
-}
-
 /**
  * Renders one type's collapsible editor block. Provides Basics and Defaults
  * sub-sections (and stubs for Fields/Lookups, filled in by later phases).
@@ -64,16 +52,12 @@ export class TypeEditor {
 		this.schemaName = schemaName;
 	}
 
-	render(parent: HTMLElement, expanded = false, depth = 0): void {
+	render(parent: HTMLElement, expanded = false): void {
 		const schema = this.plugin.loader.get(this.schemaName);
 		if (!schema) return;
 
 		const details = parent.createEl("details", { cls: "schema-type-block" });
 		if (expanded) details.setAttr("open", "");
-		if (depth > 0) {
-			details.addClass("schema-type-nested");
-			details.style.marginLeft = `${depth * 20}px`;
-		}
 		this.container = details;
 
 		const summary = details.createEl("summary");
@@ -364,23 +348,13 @@ export class TypeEditor {
 	/** Render the filename template with placeholder values for any prompted
 	 *  fields, plus the current date. Just for the inline preview. */
 	private previewFilename(schema: TypeSchema, template: string): string {
-		const now = new Date();
-		const pad = (n: number) => String(n).padStart(2, "0");
-		const ctx: Record<string, unknown> = {
-			__year: String(now.getFullYear()),
-			__month: pad(now.getMonth() + 1),
-			__day: pad(now.getDate()),
-			__hour: pad(now.getHours()),
-			__minute: pad(now.getMinutes()),
-			__week: pad(isoWeekNumber(now)),
-			__timestamp: `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}`,
-		};
+		const ctx: Record<string, unknown> = {};
 		for (const f of schema.fields) {
 			if (f.promptOnCreate && !(f.name in ctx)) {
 				ctx[f.name] = `<${f.name}>`;
 			}
 		}
-		const tpl = template.trim().length > 0 ? template : "{{__timestamp}}";
+		const tpl = template.trim().length > 0 ? template : "{{date:YYYYMMDD-HHmm}}";
 		const rendered = renderTemplate(tpl, ctx).trim();
 		return rendered.length > 0 ? `${rendered}.md` : "(empty)";
 	}

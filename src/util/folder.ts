@@ -2,9 +2,9 @@
  * Strip Liquid template segments from a folder path so it can be passed to
  * `dv.pages('"FOLDER"')` (which doesn't understand templates).
  *
- *   "Moments/{{__year}}"        → "Moments"
+ *   "Moments/{{date:YYYY}}"     → "Moments"
  *   "Facts/People"              → "Facts/People"
- *   "{{__year}}/Moments"        → ""              (whole-vault, slow but correct)
+ *   "{{date:YYYY}}/Moments"     → ""              (whole-vault, slow but correct)
  *   ""                          → ""
  */
 export function stripTemplateSegments(folder: string | undefined): string {

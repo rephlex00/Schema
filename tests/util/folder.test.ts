@@ -7,15 +7,15 @@ describe("stripTemplateSegments", () => {
 	});
 
 	it("strips trailing template segments", () => {
-		expect(stripTemplateSegments("Moments/{{__year}}")).toBe("Moments");
+		expect(stripTemplateSegments("Moments/{{date:YYYY}}")).toBe("Moments");
 	});
 
 	it("strips multi-level template segments", () => {
-		expect(stripTemplateSegments("Moments/{{__year}}/{{__month}}")).toBe("Moments");
+		expect(stripTemplateSegments("Moments/{{date:YYYY}}/{{date:MM}}")).toBe("Moments");
 	});
 
 	it("returns empty when the first segment is templated", () => {
-		expect(stripTemplateSegments("{{__year}}/Moments")).toBe("");
+		expect(stripTemplateSegments("{{date:YYYY}}/Moments")).toBe("");
 	});
 
 	it("trims trailing slashes", () => {

@@ -269,12 +269,14 @@ export class SchemaSettingsTab extends PluginSettingTab {
 		roots.sort(cmp);
 		for (const arr of childrenOf.values()) arr.sort(cmp);
 
-		const renderTree = (name: string, depth: number) => {
-			new TypeEditor(this.plugin, name).render(list, false, depth);
+		const renderTree = (name: string, parent: HTMLElement) => {
+			new TypeEditor(this.plugin, name).render(parent);
 			const kids = childrenOf.get(name) ?? [];
-			for (const k of kids) renderTree(k, depth + 1);
+			if (kids.length === 0) return;
+			const childrenEl = parent.createDiv({ cls: "schema-type-children" });
+			for (const k of kids) renderTree(k, childrenEl);
 		};
-		for (const r of roots) renderTree(r, 0);
+		for (const r of roots) renderTree(r, list);
 	}
 
 	private refreshTypeList(): void {

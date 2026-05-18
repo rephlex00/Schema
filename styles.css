@@ -233,10 +233,57 @@ details[open] > summary > .schema-summary-chevron {
   white-space: nowrap;
 }
 
-/* Indent for nested types in the tree view (children of `extends:`). The
- * inline margin-left is set per-level by the renderer. */
-.schema-type-nested {
-  border-left: 2px solid var(--background-modifier-border);
+/* Children of an `extends:` parent are nested inside .schema-type-children.
+ * Instead of a single rail on the container, each child draws its own curved
+ * L-shaped connector (::before) plus a vertical continuation (::after) when it
+ * isn't the last sibling — together they form a tree with rounded corners. */
+.schema-type-children {
+  margin-left: 18px;
+  padding-left: 16px;
+  margin-top: 6px;
+  margin-bottom: 14px;
+}
+
+.schema-type-children > .schema-type-block {
+  position: relative;
+  margin-bottom: 6px;
+}
+
+/* Curved L: vertical segment from the top of the child, curving right at the
+ * row's visual center so it meets the chip's baseline. */
+.schema-type-children > .schema-type-block::before {
+  content: "";
+  position: absolute;
+  left: -16px;
+  top: -6px;
+  width: 14px;
+  height: 26px;
+  border-left: 1px solid var(--background-modifier-border);
+  border-bottom: 1px solid var(--background-modifier-border);
+  border-bottom-left-radius: 10px;
+  pointer-events: none;
+}
+
+/* Vertical continuation linking to the next sibling. */
+.schema-type-children > .schema-type-block:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: -16px;
+  top: 20px;
+  bottom: -6px;
+  width: 1px;
+  background: var(--background-modifier-border);
+  pointer-events: none;
+}
+
+.schema-type-children > .schema-type-block:last-child {
+  margin-bottom: 0;
+}
+
+/* Give root-level types extra breathing room so distinct branches read clearly
+ * apart from the tighter intra-branch sibling spacing. */
+.schema-types-list > .schema-type-block {
+  margin-bottom: 14px;
 }
 
 .schema-type-body h5 {
