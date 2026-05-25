@@ -43,13 +43,17 @@ function buildTypeRowActions(summary: HTMLElement, onDelete: () => void): void {
 export class TypeEditor {
 	private readonly plugin: SchemaPlugin;
 	private readonly schemaName: string;
+	/** Invoked after a structural change (delete/clone/extends) that the parent
+	 *  settings tab must re-render to reflect (the type tree or summary changed). */
+	private readonly onStructureChange: () => void;
 	private container!: HTMLElement;
 	private debounceTimer: number | null = null;
 	private pending: Partial<TypeSchema> = {};
 
-	constructor(plugin: SchemaPlugin, schemaName: string) {
+	constructor(plugin: SchemaPlugin, schemaName: string, onStructureChange: () => void) {
 		this.plugin = plugin;
 		this.schemaName = schemaName;
+		this.onStructureChange = onStructureChange;
 	}
 
 	render(parent: HTMLElement, expanded = false): void {
@@ -114,7 +118,13 @@ export class TypeEditor {
 					d.addOption(other.name, other.name);
 				}
 				d.setValue(schema.extends ?? "");
-				d.onChange((v) => this.queue({ extends: v || undefined }));
+				d.onChange((v) => {
+					// Extends restructures the tree (nesting + inheritance hints),
+					// so commit immediately and ask the parent to re-render.
+					this.pending = { ...this.pending, extends: v || undefined };
+					this.flush();
+					this.onStructureChange();
+				});
 			});
 
 		new Setting(ind)
@@ -282,7 +292,7 @@ export class TypeEditor {
 				text: `+ inherited from ${schema.extends}: ${inherited.join(", ")}`,
 			});
 		}
-		new FieldListEditor(this.plugin, schema.name).render(container);
+		new FieldListEditor(this.plugin, schema.name, this.onStructureChange).render(container);
 	}
 
 	private renderLookups(parent: HTMLElement, schema: TypeSchema): void {
@@ -320,7 +330,7 @@ export class TypeEditor {
 				}
 			}
 		}
-		new LookupListEditor(this.plugin, schema.name).render(container);
+		new LookupListEditor(this.plugin, schema.name, this.onStructureChange).render(container);
 	}
 
 	private renderDelete(parent: HTMLElement, schema: TypeSchema): void {
@@ -343,6 +353,7 @@ export class TypeEditor {
 		if (!ok) return;
 		this.plugin.loader.remove(schema.name);
 		new Notice(`Schema: deleted type "${schema.name}".`);
+		this.onStructureChange();
 	}
 
 	/** Render the filename template with placeholder values for any prompted
@@ -384,16 +395,25 @@ export class TypeEditor {
 		};
 		this.plugin.loader.add(clone);
 		new Notice(`Schema: cloned "${schema.name}" → "${name}".`);
+		this.onStructureChange();
 	}
 
 	private queue(partial: Partial<TypeSchema>): void {
 		this.pending = { ...this.pending, ...partial };
 		if (this.debounceTimer != null) window.clearTimeout(this.debounceTimer);
-		this.debounceTimer = window.setTimeout(() => {
+		this.debounceTimer = window.setTimeout(() => this.flush(), 400);
+	}
+
+	/** Commit any pending edits immediately, cancelling the debounce timer.
+	 *  Used before a structural re-render so in-flight text edits aren't lost. */
+	private flush(): void {
+		if (this.debounceTimer != null) {
+			window.clearTimeout(this.debounceTimer);
 			this.debounceTimer = null;
-			const p = this.pending;
-			this.pending = {};
-			this.plugin.loader.update(this.schemaName, p);
-		}, 400);
+		}
+		if (Object.keys(this.pending).length === 0) return;
+		const p = this.pending;
+		this.pending = {};
+		this.plugin.loader.update(this.schemaName, p);
 	}
 }

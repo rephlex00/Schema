@@ -10,6 +10,8 @@ import { validateAll } from "./validator";
  * via get / getAll.
  *
  * Emits `schema-loaded` once after start() and `schema-changed` on any commit.
+ * Bulk replacement via setAll() additionally emits `schema-replaced` so views
+ * can do a full rebuild on import/restore while incremental edits stay cheap.
  */
 export class SchemaLoader extends Events {
 	private schemas = new Map<string, TypeSchema>();
@@ -68,6 +70,7 @@ export class SchemaLoader extends Events {
 		}
 		this.runValidation();
 		this.trigger("schema-changed", this.getAll());
+		this.trigger("schema-replaced", this.getAll());
 	}
 
 	/** Insert or replace a single type. */

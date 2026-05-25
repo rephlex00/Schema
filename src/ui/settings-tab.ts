@@ -23,12 +23,18 @@ const TABS: TabDef[] = [
  * active tab's content below. Validation issues, when present, render at the
  * top of every tab so they're never missed.
  *
- * Re-renders when the loader emits `schema-changed` (via plugin re-display),
- * so edits made via the loader's API show up immediately.
+ * Incremental edits never rebuild the pane — that would discard scroll
+ * position, focus, and expanded sections mid-edit. Instead `schema-changed`
+ * only refreshes the validation banner in place, while a full rebuild happens
+ * solely on bulk `schema-replaced` (import/restore) or on the structural edits
+ * (add/remove/clone type, extends change, field/lookup add/remove/reorder)
+ * that call back into `display()` explicitly.
  */
 export class SchemaSettingsTab extends PluginSettingTab {
 	private readonly plugin: SchemaPlugin;
-	private rerenderListener: (() => void) | null = null;
+	private validationListener: (() => void) | null = null;
+	private replacedListener: (() => void) | null = null;
+	private validationEl: HTMLElement | null = null;
 	private filterText = "";
 	private activeTab: TabId = "objects";
 
@@ -43,7 +49,8 @@ export class SchemaSettingsTab extends PluginSettingTab {
 		containerEl.createEl("h2", { text: "Schema" });
 
 		this.renderTabBar(containerEl);
-		this.renderValidation(containerEl);
+		this.validationEl = containerEl.createDiv({ cls: "schema-validation-wrap" });
+		this.refreshValidation();
 
 		const body = containerEl.createDiv({ cls: "schema-tab-body" });
 		switch (this.activeTab) {
@@ -58,19 +65,29 @@ export class SchemaSettingsTab extends PluginSettingTab {
 				break;
 		}
 
-		this.detachRerenderListener();
-		this.rerenderListener = () => this.display();
-		this.plugin.loader.on("schema-changed", this.rerenderListener);
+		this.attachListeners();
 	}
 
 	hide(): void {
-		this.detachRerenderListener();
+		this.detachListeners();
 	}
 
-	private detachRerenderListener(): void {
-		if (this.rerenderListener) {
-			this.plugin.loader.off("schema-changed", this.rerenderListener);
-			this.rerenderListener = null;
+	private attachListeners(): void {
+		this.detachListeners();
+		this.validationListener = () => this.refreshValidation();
+		this.replacedListener = () => this.display();
+		this.plugin.loader.on("schema-changed", this.validationListener);
+		this.plugin.loader.on("schema-replaced", this.replacedListener);
+	}
+
+	private detachListeners(): void {
+		if (this.validationListener) {
+			this.plugin.loader.off("schema-changed", this.validationListener);
+			this.validationListener = null;
+		}
+		if (this.replacedListener) {
+			this.plugin.loader.off("schema-replaced", this.replacedListener);
+			this.replacedListener = null;
 		}
 	}
 
@@ -163,13 +180,20 @@ export class SchemaSettingsTab extends PluginSettingTab {
 			});
 	}
 
-	private renderValidation(parent: HTMLElement): void {
+	/** Re-render the validation banner in place. Cheap enough to run on every
+	 *  `schema-changed` so duplicate-name/missing-parent feedback stays live
+	 *  while the user types, without rebuilding the whole pane. */
+	private refreshValidation(): void {
+		const host = this.validationEl;
+		if (!host) return;
+		host.empty();
+
 		const errs = this.plugin.loader.getValidationErrors();
 		const errors = errs.filter((e) => e.level === "error");
 		const warnings = errs.filter((e) => e.level === "warning");
 		if (errors.length === 0 && warnings.length === 0) return;
 
-		const wrap = parent.createDiv({ cls: "schema-validation-banner" });
+		const wrap = host.createDiv({ cls: "schema-validation-banner" });
 		wrap.createEl("strong", {
 			text: `Validation: ${errors.length} error${errors.length === 1 ? "" : "s"}, ${warnings.length} warning${warnings.length === 1 ? "" : "s"}`,
 		});
@@ -270,7 +294,7 @@ export class SchemaSettingsTab extends PluginSettingTab {
 		for (const arr of childrenOf.values()) arr.sort(cmp);
 
 		const renderTree = (name: string, parent: HTMLElement) => {
-			new TypeEditor(this.plugin, name).render(parent);
+			new TypeEditor(this.plugin, name, () => this.display()).render(parent);
 			const kids = childrenOf.get(name) ?? [];
 			if (kids.length === 0) return;
 			const childrenEl = parent.createDiv({ cls: "schema-type-children" });

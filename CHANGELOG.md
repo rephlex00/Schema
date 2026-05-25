@@ -21,6 +21,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   vertical guide rails, one per ancestor depth, so inheritance chains read
   cleanly at a glance.
 
+### Fixed
+- **Settings → Schema no longer rebuilds the whole pane while you type.**
+  Editing a field, folder, filename, query, or any other text input used to
+  wipe and re-render the entire settings pane shortly after each change,
+  throwing away scroll position, focus, and expanded sections. Text edits now
+  persist silently; only the validation banner refreshes live, and a full
+  rebuild happens solely on structural changes (add/remove/clone type, extends
+  change, field/lookup add/remove/reorder) and on bulk import/restore.
+
 ## [2.0.0] — 2026-05-01
 
 ### Breaking

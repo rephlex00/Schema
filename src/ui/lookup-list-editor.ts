@@ -12,13 +12,17 @@ import { promptForString } from "./prompt-modal";
 export class LookupListEditor {
 	private readonly plugin: SchemaPlugin;
 	private readonly typeName: string;
+	/** Re-render the settings pane after a change that alters this list's
+	 *  structure (add/remove/reorder) or reveals/hides the auto-update toggle. */
+	private readonly onStructureChange: () => void;
 	private debounceTimer: number | null = null;
 	/** Per-lookup-index accumulated edits. Same fix as FieldListEditor. */
 	private pending = new Map<number, Partial<LookupSchema>>();
 
-	constructor(plugin: SchemaPlugin, typeName: string) {
+	constructor(plugin: SchemaPlugin, typeName: string, onStructureChange: () => void) {
 		this.plugin = plugin;
 		this.typeName = typeName;
+		this.onStructureChange = onStructureChange;
 	}
 
 	render(parent: HTMLElement): void {
@@ -91,7 +95,11 @@ export class LookupListEditor {
 			d.addOption("block", "block (live in note body via ```schema-lookup```)");
 			d.setValue(lookup.render);
 			d.onChange((v) => {
+				// Switching render mode shows/hides the auto-update toggle, so
+				// commit immediately and re-render instead of debouncing.
 				this.queueUpdate(index, { render: v as LookupSchema["render"] });
+				this.flush();
+				this.onStructureChange();
 			});
 		});
 
@@ -119,6 +127,7 @@ export class LookupListEditor {
 	}
 
 	private async addLookup(): Promise<void> {
+		this.flush();
 		const schema = this.plugin.loader.get(this.typeName);
 		if (!schema) return;
 		const name = await promptForString(this.plugin.app, "Add lookup", "Lookup name");
@@ -136,16 +145,20 @@ export class LookupListEditor {
 		};
 		const lookups = [...schema.lookups, newLookup];
 		this.plugin.loader.update(this.typeName, { lookups });
+		this.onStructureChange();
 	}
 
 	private remove(index: number): void {
+		this.flush();
 		const schema = this.plugin.loader.get(this.typeName);
 		if (!schema) return;
 		const lookups = schema.lookups.filter((_, i) => i !== index);
 		this.plugin.loader.update(this.typeName, { lookups });
+		this.onStructureChange();
 	}
 
 	private move(index: number, delta: number): void {
+		this.flush();
 		const schema = this.plugin.loader.get(this.typeName);
 		if (!schema) return;
 		const target = index + delta;
@@ -154,22 +167,35 @@ export class LookupListEditor {
 		const [moved] = lookups.splice(index, 1);
 		lookups.splice(target, 0, moved);
 		this.plugin.loader.update(this.typeName, { lookups });
+		this.onStructureChange();
 	}
 
 	private queueUpdate(index: number, partial: Partial<LookupSchema>): void {
 		const cur = this.pending.get(index) ?? {};
 		this.pending.set(index, { ...cur, ...partial });
 		if (this.debounceTimer != null) window.clearTimeout(this.debounceTimer);
-		this.debounceTimer = window.setTimeout(() => {
+		this.debounceTimer = window.setTimeout(() => this.flush(), 400);
+	}
+
+	/** Commit any pending lookup edits immediately, cancelling the debounce
+	 *  timer. Called before a structural re-render so in-flight text edits
+	 *  aren't dropped when the row is rebuilt. */
+	private flush(): void {
+		if (this.debounceTimer != null) {
+			window.clearTimeout(this.debounceTimer);
 			this.debounceTimer = null;
-			const schema = this.plugin.loader.get(this.typeName);
-			if (!schema) return;
-			const updates = this.pending;
+		}
+		if (this.pending.size === 0) return;
+		const schema = this.plugin.loader.get(this.typeName);
+		if (!schema) {
 			this.pending = new Map();
-			const lookups = schema.lookups.map((l, i) =>
-				updates.has(i) ? { ...l, ...updates.get(i)! } : l
-			);
-			this.plugin.loader.update(this.typeName, { lookups });
-		}, 400);
+			return;
+		}
+		const updates = this.pending;
+		this.pending = new Map();
+		const lookups = schema.lookups.map((l, i) =>
+			updates.has(i) ? { ...l, ...updates.get(i)! } : l
+		);
+		this.plugin.loader.update(this.typeName, { lookups });
 	}
 }

@@ -44,14 +44,18 @@ export { buildRowActions };
 export class FieldListEditor {
 	private readonly plugin: SchemaPlugin;
 	private readonly typeName: string;
+	/** Re-render the settings pane after a change that alters this list's
+	 *  structure (add/remove/reorder) or reveals/hides type-specific options. */
+	private readonly onStructureChange: () => void;
 	private debounceTimer: number | null = null;
 	/** Per-field-index accumulated edits. A single timer flushes all of them
 	 *  together so editing field A then field B within 400ms doesn't lose A. */
 	private pending = new Map<number, Partial<FieldSchema>>();
 
-	constructor(plugin: SchemaPlugin, typeName: string) {
+	constructor(plugin: SchemaPlugin, typeName: string, onStructureChange: () => void) {
 		this.plugin = plugin;
 		this.typeName = typeName;
+		this.onStructureChange = onStructureChange;
 	}
 
 	render(parent: HTMLElement): void {
@@ -108,9 +112,11 @@ export class FieldListEditor {
 			for (const ft of ALL_FIELD_TYPES) d.addOption(ft, ft);
 			d.setValue(field.type);
 			d.onChange((v) => {
+				// Type change reveals/hides type-specific options, so commit
+				// immediately and re-render rather than waiting on the debounce.
 				this.queueFieldUpdate(index, { type: v as FieldType });
-				// Type change reveals/hides options — re-render after commit
-				window.setTimeout(() => details.parentElement?.parentElement && this.refresh(parent.parentElement), 450);
+				this.flush();
+				this.onStructureChange();
 			});
 		});
 
@@ -222,6 +228,7 @@ export class FieldListEditor {
 	}
 
 	private async addField(): Promise<void> {
+		this.flush();
 		const schema = this.plugin.loader.get(this.typeName);
 		if (!schema) return;
 		const name = await promptForString(this.plugin.app, "Add field", "Field name");
@@ -233,16 +240,20 @@ export class FieldListEditor {
 		const newField: FieldSchema = { name, type: "Input" };
 		const fields = [...schema.fields, newField];
 		this.plugin.loader.update(this.typeName, { fields });
+		this.onStructureChange();
 	}
 
 	private removeField(index: number): void {
+		this.flush();
 		const schema = this.plugin.loader.get(this.typeName);
 		if (!schema) return;
 		const fields = schema.fields.filter((_, i) => i !== index);
 		this.plugin.loader.update(this.typeName, { fields });
+		this.onStructureChange();
 	}
 
 	private moveField(index: number, delta: number): void {
+		this.flush();
 		const schema = this.plugin.loader.get(this.typeName);
 		if (!schema) return;
 		const target = index + delta;
@@ -251,27 +262,35 @@ export class FieldListEditor {
 		const [moved] = fields.splice(index, 1);
 		fields.splice(target, 0, moved);
 		this.plugin.loader.update(this.typeName, { fields });
+		this.onStructureChange();
 	}
 
 	private queueFieldUpdate(index: number, partial: Partial<FieldSchema>): void {
 		const cur = this.pending.get(index) ?? {};
 		this.pending.set(index, { ...cur, ...partial });
 		if (this.debounceTimer != null) window.clearTimeout(this.debounceTimer);
-		this.debounceTimer = window.setTimeout(() => {
-			this.debounceTimer = null;
-			const schema = this.plugin.loader.get(this.typeName);
-			if (!schema) return;
-			const updates = this.pending;
-			this.pending = new Map();
-			const fields = schema.fields.map((f, i) =>
-				updates.has(i) ? { ...f, ...updates.get(i)! } : f
-			);
-			this.plugin.loader.update(this.typeName, { fields });
-		}, 400);
+		this.debounceTimer = window.setTimeout(() => this.flush(), 400);
 	}
 
-	/** Hook for the parent type editor to ask for a re-render after a schema-changed event. */
-	private refresh(_parent: HTMLElement | null): void {
-		// no-op: the SchemaSettingsTab listens to schema-changed and calls display() itself.
+	/** Commit any pending field edits immediately, cancelling the debounce
+	 *  timer. Called before a structural re-render so in-flight text edits
+	 *  aren't dropped when the row is rebuilt. */
+	private flush(): void {
+		if (this.debounceTimer != null) {
+			window.clearTimeout(this.debounceTimer);
+			this.debounceTimer = null;
+		}
+		if (this.pending.size === 0) return;
+		const schema = this.plugin.loader.get(this.typeName);
+		if (!schema) {
+			this.pending = new Map();
+			return;
+		}
+		const updates = this.pending;
+		this.pending = new Map();
+		const fields = schema.fields.map((f, i) =>
+			updates.has(i) ? { ...f, ...updates.get(i)! } : f
+		);
+		this.plugin.loader.update(this.typeName, { fields });
 	}
 }
