@@ -15,6 +15,17 @@ A typical typed-note workflow in Obsidian today threads through four plugins:
 
 Schema collapses all of that into one source of truth (the plugin's Settings → Schema tab) and ships the lifecycle as native subsystems.
 
+## Requirements
+
+- Obsidian 1.4.0 or newer.
+- [Dataview](https://github.com/blacksmithgu/obsidian-dataview) is optional. It's only needed for Custom lookups that go beyond the built-in query subset (see [Lookup query runtime](#lookup-query-runtime)); everything else works without it.
+
+## Installation
+
+**From the community directory** (once Schema is listed): Settings → Community plugins → Browse, search for "Schema", Install, then Enable.
+
+**Manually:** download `main.js`, `manifest.json`, and `styles.css` from the [latest release](https://github.com/rephlex00/Schema/releases/latest), put them in `<your-vault>/.obsidian/plugins/schema/`, then enable Schema under Settings → Community plugins.
+
 ## Defining a type
 
 **Settings → Schema → "+ Add type"**. Each type expands inline:
@@ -230,6 +241,23 @@ npm run deploy     # build + copy main.js, manifest.json, styles.css to dev vaul
 export OBSIDIAN_PLUGIN_DIR="/path/to/YourVault/.obsidian/plugins/schema"
 npm run deploy
 ```
+
+### Releasing
+
+Every push and PR to `main` runs the build and the test suite via CI. To cut a
+release, bump the version and push a matching tag:
+
+```bash
+npm run version:bump          # syncs manifest.json, package.json, versions.json
+git commit -am "Release <version>"
+git push
+git tag <version>             # tag must equal manifest.json version, no "v" prefix
+git push origin <version>
+```
+
+The tag push triggers the release workflow, which builds and creates a draft
+GitHub release with `main.js`, `manifest.json`, and `styles.css` attached.
+Review the draft and publish it.
 
 ## License
 

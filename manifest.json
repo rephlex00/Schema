@@ -3,7 +3,7 @@
   "name": "Schema",
   "version": "2026.6.20",
   "minAppVersion": "1.4.0",
-  "description": "Typed-note workflow for Obsidian. Define object types in YAML, get auto-reshelve on type change, native lookups, and a single source of truth for schema, folder, filename, and prompts.",
+  "description": "One source of truth for typed notes in Obsidian: define object types once, get auto-filing, per-type creation commands, and automatic backlinks.",
   "author": "rephlex00",
   "authorUrl": "https://github.com/rephlex00",
   "isDesktopOnly": false
