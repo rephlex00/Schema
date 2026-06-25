@@ -1,7 +1,11 @@
+// Kept over Obsidian's parseYaml/stringifyYaml on purpose: faithful frontmatter
+// serialization needs js-yaml's dump options (sortKeys: false, lineWidth: 10000,
+// noRefs: true), which Obsidian's helpers don't expose. Swapping would risk
+// reflowing or reordering keys in users' notes.
 import * as yaml from "js-yaml";
 import { App, Notice, TFile } from "obsidian";
 import type SchemaPlugin from "../main";
-import type { FieldSchema, FieldType, TypeSchema } from "../schema/types";
+import type { FieldType, TypeSchema } from "../schema/types";
 import { askMergeChoice, type MergeChoice } from "../ui/template-merge-modal";
 import { effectiveFields, getUniversalFields } from "../util/universal";
 import { TemplaterBridge } from "./templater-bridge";

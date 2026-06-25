@@ -12,6 +12,8 @@
  * the value through unchanged.
  */
 
+import { evalFunctionBody } from "./safe-eval";
+
 const TAG_RE = /\{\{\s*([^}]+?)\s*\}\}/g;
 
 type Filter = (input: string, ...args: string[]) => string;
@@ -47,7 +49,10 @@ export function registerCustomFilter(
 	body: string
 ): { ok: true } | { ok: false; error: string } {
 	try {
-		const fn = new Function("value", body) as (v: string) => unknown;
+		// Compiled once in the sandboxed interpreter (not `new Function`): the body
+		// runs with only `value` in scope plus the safe-globals whitelist, so a
+		// filter can't reach app globals or the Function constructor.
+		const fn = evalFunctionBody(["value"], body);
 		CUSTOM_FILTERS.set(name, (s: string) => {
 			try {
 				const r = fn(s);
@@ -118,7 +123,13 @@ export function formatMoment(format: string, date: Date = new Date()): string {
 }
 
 function formatDate(format: string, date: Date): string {
-	const moment = (globalThis as { moment?: (d: Date) => { format: (f: string) => string } }).moment;
+	// Obsidian exposes moment on the (popout-aware) window; guard for the node
+	// test environment where no window exists.
+	const win =
+		typeof activeWindow !== "undefined"
+			? (activeWindow as { moment?: (d: Date) => { format: (f: string) => string } })
+			: undefined;
+	const moment = win?.moment;
 	if (typeof moment === "function") {
 		try {
 			return moment(date).format(format);
@@ -147,7 +158,7 @@ function formatTokens(format: string, date: Date): string {
 	const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 	const dayShort = dayNames.map((n) => n.slice(0, 3));
 
-	return format.replace(TOKEN_RE, (match, escaped) => {
+	return format.replace(TOKEN_RE, (match: string, escaped?: string) => {
 		if (escaped !== undefined) return escaped;
 		switch (match) {
 			case "YYYY": return String(Y);

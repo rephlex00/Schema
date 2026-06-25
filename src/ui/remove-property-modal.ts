@@ -67,7 +67,7 @@ class RemovePropertyModal extends Modal {
 			.addButton((b) =>
 				b
 					.setButtonText("Remove")
-					.setWarning()
+					.setDestructive()
 					.onClick(() => this.commit())
 			)
 			.addButton((b) =>

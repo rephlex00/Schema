@@ -96,7 +96,7 @@ export class FieldEditModal extends Modal {
 	private renderText(parent: HTMLElement, current: unknown): void {
 		new Setting(parent).setName("Value").addText((text) => {
 			text.setValue(typeof current === "string" ? current : "").onChange((v) =>
-				this.write(v)
+				void this.write(v)
 			);
 		});
 	}
@@ -105,9 +105,8 @@ export class FieldEditModal extends Modal {
 		new Setting(parent).setName("Value (YAML)").addTextArea((area) => {
 			const initial =
 				typeof current === "string" ? current : current ? JSON.stringify(current, null, 2) : "";
-			area.setValue(initial).onChange((v) => this.write(v));
-			area.inputEl.style.minHeight = "120px";
-			area.inputEl.style.fontFamily = "var(--font-monospace)";
+			area.setValue(initial).onChange((v) => void this.write(v));
+			area.inputEl.addClass("schema-mono-area");
 		});
 	}
 
@@ -115,7 +114,7 @@ export class FieldEditModal extends Modal {
 		new Setting(parent).setName("Value").addText((text) => {
 			text.setValue(typeof current === "number" ? String(current) : "").onChange((v) => {
 				const n = Number.parseFloat(v);
-				this.write(Number.isFinite(n) ? n : null);
+				void this.write(Number.isFinite(n) ? n : null);
 			});
 			text.inputEl.type = "number";
 		});
@@ -124,14 +123,14 @@ export class FieldEditModal extends Modal {
 	private renderIcon(parent: HTMLElement, current: unknown): void {
 		const setting = new Setting(parent).setName("Value");
 		renderIconControl(setting.controlEl, typeof current === "string" ? current : "", (v) =>
-			this.write(v)
+			void this.write(v)
 		);
 	}
 
 	private renderColor(parent: HTMLElement, current: unknown): void {
 		const setting = new Setting(parent).setName("Value");
 		renderColorControl(setting.controlEl, typeof current === "string" ? current : "", (v) =>
-			this.write(v)
+			void this.write(v)
 		);
 	}
 
@@ -142,7 +141,7 @@ export class FieldEditModal extends Modal {
 	}
 
 	private renderSelect(parent: HTMLElement, current: unknown): void {
-		const options = (this.field.options ?? {}) as Record<string, unknown>;
+		const options = this.field.options ?? {};
 		const valuesList = (options.valuesList as Record<string, string> | undefined) ?? {};
 		const valuesListNotePath = options.valuesListNotePath as string | undefined;
 
@@ -174,7 +173,7 @@ export class FieldEditModal extends Modal {
 			.addButton((btn) => {
 				btn.setButtonText("Pick file").onClick(() => {
 					const picker = new SchemaFilePickerModal(this.app, this.plugin, this.field, (path) => {
-						this.write(path ? `[[${path.replace(/\.md$/, "")}]]` : "");
+						void this.write(path ? `[[${path.replace(/\.md$/, "")}]]` : "");
 						this.close();
 					});
 					picker.open();
@@ -257,8 +256,7 @@ export class FieldEditModal extends Modal {
 					expression = v;
 				});
 				t.inputEl.rows = 3;
-				t.inputEl.style.fontFamily = "var(--font-monospace)";
-				t.inputEl.style.width = "100%";
+				t.inputEl.addClass("schema-code-input");
 			});
 
 		const valueLabel = parent.createEl("div", {
@@ -330,7 +328,7 @@ export class FieldEditModal extends Modal {
 					const a = li.createEl("a", { text: f.basename, cls: "internal-link" });
 					a.dataset.href = f.path;
 					a.addEventListener("click", () => {
-						this.plugin.app.workspace.openLinkText(f.path, this.file.path, false);
+						void this.plugin.app.workspace.openLinkText(f.path, this.file.path, false);
 						this.close();
 					});
 				}
@@ -346,7 +344,7 @@ export class FieldEditModal extends Modal {
 	}
 
 	private async write(value: unknown): Promise<void> {
-		await this.plugin.app.fileManager.processFrontMatter(this.file, (fm) => {
+		await this.plugin.app.fileManager.processFrontMatter(this.file, (fm: Record<string, unknown>) => {
 			if (value == null || value === "" || (Array.isArray(value) && value.length === 0)) {
 				delete fm[this.field.name];
 			} else {

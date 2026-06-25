@@ -1,4 +1,5 @@
 import { App, TFile } from "obsidian";
+import { evalExpression } from "../util/safe-eval";
 
 /**
  * Evaluate a Formula field's JS expression against an active note. The
@@ -8,15 +9,18 @@ import { App, TFile } from "obsidian";
  *
  * Returns the stringified result, or an error message prefixed with `!err:`.
  *
- * Note: this uses `new Function` for evaluation, same trust model as the
- * Lookup query runtime. Don't run formulas from untrusted sources.
+ * Evaluation runs in the sandboxed interpreter (see `util/safe-eval`), not
+ * `new Function`/`eval`, so a formula can't reach app globals or the Function
+ * constructor. Same trust model as the Lookup query runtime.
  */
 export function evaluateFormula(app: App, file: TFile, expression: string): string {
 	const cache = app.metadataCache.getFileCache(file);
 	const fm = (cache?.frontmatter ?? {}) as Record<string, unknown>;
 	try {
-		const fn = new Function("fm", "file", `return (${expression});`);
-		const result = fn(fm, { path: file.path, name: file.basename });
+		const result = evalExpression(expression, {
+			fm,
+			file: { path: file.path, name: file.basename },
+		});
 		if (result == null) return "";
 		if (typeof result === "object") return JSON.stringify(result);
 		return String(result);

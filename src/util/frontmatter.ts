@@ -1,3 +1,7 @@
+// Kept over Obsidian's parseYaml/stringifyYaml on purpose: faithful frontmatter
+// serialization needs js-yaml's dump options (sortKeys: false, lineWidth: 10000,
+// noRefs: true), which Obsidian's helpers don't expose. Swapping would risk
+// reflowing or reordering keys in users' notes.
 import * as yaml from "js-yaml";
 import type { FieldSchema, FieldType, TypeSchema } from "../schema/types";
 import { effectiveFields } from "./universal";

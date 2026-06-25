@@ -5,7 +5,6 @@ const SAMPLE_TYPE = "person";
 const SAMPLE_ICON = "user";
 const SAMPLE_COLOR = "#4A90E2";
 const SAMPLE_FILENAME = "Jane Smith.md";
-const SAMPLE_FOLDER = "Facts/People";
 
 export function renderAppearanceVisualsPane(plugin: SchemaPlugin, parent: HTMLElement): void {
 	const banner = new Setting(parent)

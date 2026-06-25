@@ -50,14 +50,17 @@ export function colorToRgbInt(color: string): number | null {
 	if (trimmed === "") return null;
 	const hex = hexToRgbInt(trimmed);
 	if (hex != null) return hex;
-	if (typeof document === "undefined") return null;
-	const probe = document.createElement("div");
-	probe.style.color = "";
-	probe.style.color = trimmed;
-	if (probe.style.color === "") return null; // browser rejected it
-	document.body.appendChild(probe);
+	if (typeof activeDocument === "undefined") return null;
+	// Reject anything the engine doesn't recognize as a color before rendering it
+	// (replaces the old empty-string style-probe trick).
+	if (typeof CSS !== "undefined" && typeof CSS.supports === "function" && !CSS.supports("color", trimmed)) {
+		return null;
+	}
+	const probe = activeDocument.createElement("div");
+	probe.setCssStyles({ color: trimmed });
+	activeDocument.body.appendChild(probe);
 	try {
-		const computed = getComputedStyle(probe).color; // "rgb(r, g, b)" / "rgba(…)"
+		const computed = activeWindow.getComputedStyle(probe).color; // "rgb(r, g, b)" / "rgba(…)"
 		const rgb = computed.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
 		if (!rgb) return null;
 		return (Number(rgb[1]) << 16) | (Number(rgb[2]) << 8) | Number(rgb[3]);

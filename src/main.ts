@@ -217,14 +217,14 @@ export default class SchemaPlugin extends Plugin {
 		});
 
 		this.addCommand({
-			id: "export-schemas",
-			name: "Export schemas to JSON",
+			id: "export-types-json",
+			name: "Export object types to JSON",
 			callback: () => void exportSchemas(this),
 		});
 
 		this.addCommand({
-			id: "import-schemas",
-			name: "Import schemas from JSON",
+			id: "import-types-json",
+			name: "Import object types from JSON",
 			callback: () => void importSchemas(this),
 		});
 
@@ -371,7 +371,7 @@ export default class SchemaPlugin extends Plugin {
 	}
 
 	async loadSettings() {
-		const loaded = (await this.loadData()) ?? {};
+		const loaded = ((await this.loadData()) ?? {}) as Partial<typeof DEFAULT_SETTINGS>;
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, loaded);
 
 		// Snapshot the ORIGINAL data before any migration mutates it, so a single

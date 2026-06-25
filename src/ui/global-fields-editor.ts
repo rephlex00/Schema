@@ -227,7 +227,7 @@ export class GlobalFieldsEditor {
 				return;
 			}
 			case "Formula": {
-				const opts = (field.options ?? {}) as Record<string, unknown>;
+				const opts = field.options ?? {};
 				new Setting(parent)
 					.setName("Expression")
 					.setDesc("JavaScript expression evaluated against the note's properties. Use `fm` for the property map and `file` for the file. Example: fm.firstname + ' ' + fm.lastname")
@@ -240,14 +240,14 @@ export class GlobalFieldsEditor {
 								});
 							});
 						t.inputEl.rows = 2;
-						t.inputEl.style.fontFamily = "var(--font-monospace)";
+						t.inputEl.addClass("schema-mono-input");
 					});
 				return;
 			}
 			case "Date":
 			case "DateTime":
 			case "Time": {
-				const opts = (field.options ?? {}) as Record<string, unknown>;
+				const opts = field.options ?? {};
 				new Setting(parent)
 					.setName("Pre-fill with the current date/time when a note is created")
 					.addToggle((t) => {
@@ -262,7 +262,7 @@ export class GlobalFieldsEditor {
 			}
 			case "Select":
 			case "Cycle": {
-				const opts = (field.options ?? {}) as Record<string, unknown>;
+				const opts = field.options ?? {};
 				new Setting(parent)
 					.setName("Pull choices from a note")
 					.setDesc("Path to a note whose bullet-list items become the choices. Useful for sharing one list (e.g. relationship types) across many properties.")

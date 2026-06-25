@@ -58,7 +58,7 @@ export async function cleanFrontmatter(
 	const allowed = allowedKeys(schema, universalFields, typeKey);
 	const defaults = schema.defaults ?? {};
 
-	await app.fileManager.processFrontMatter(file, (fm) => {
+	await app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => {
 		// Drop disallowed keys.
 		for (const key of Object.keys(fm)) {
 			if (!allowed.has(key)) {

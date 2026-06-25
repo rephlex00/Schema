@@ -104,8 +104,8 @@ export class TypeBannerManager {
 		if (color) banner.style.setProperty("--type-color", color);
 		else banner.style.removeProperty("--type-color");
 
-		const iconEl = banner.querySelector(`.${BANNER_CLASS}-icon`) as HTMLElement | null;
-		const nameEl = banner.querySelector(`.${BANNER_CLASS}-name`) as HTMLElement | null;
+		const iconEl = banner.querySelector<HTMLElement>(`.${BANNER_CLASS}-icon`);
+		const nameEl = banner.querySelector<HTMLElement>(`.${BANNER_CLASS}-name`);
 
 		if (iconEl) {
 			iconEl.empty();
