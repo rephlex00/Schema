@@ -1,0 +1,2297 @@
+/* Schema plugin styles */
+
+/* === Settings landing & sub-page shell ==============================
+ * The Schema settings tab uses Obsidian's native `SettingGroup` +
+ * `Setting` primitives so it inherits the platform's native iOS-card
+ * look on mobile and standard list look on desktop. Only the small
+ * decorations below are custom: badge, back button layout, page
+ * description. Pattern lifted from Notebook Navigator. */
+
+.schema-settings-page-link {
+  cursor: pointer;
+}
+
+.schema-settings-page-link:focus-visible {
+  outline: 2px solid var(--background-modifier-border-focus);
+  outline-offset: -2px;
+}
+
+/* Validation count badge appended to the Types row's name. */
+.schema-settings-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  margin-left: 8px;
+  padding: 0 7px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.schema-settings-badge-error {
+  background: var(--text-error);
+  color: var(--text-on-accent, white);
+}
+
+.schema-settings-badge-warn {
+  background: var(--text-warning, var(--color-yellow, #d29922));
+  color: var(--text-on-accent, white);
+}
+
+/* Neutral "how many" count chip on landing rows (types, properties, etc.). */
+.schema-settings-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 18px;
+  margin-left: 8px;
+  padding: 0 7px;
+  border-radius: 9px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  vertical-align: middle;
+  background: var(--background-modifier-border);
+  color: var(--text-muted);
+}
+
+/* Sub-page titlebar: native heading row, with a back button injected
+ * into the name slot. Mirrors NN's `nn-settings-legacy-titlebar`. */
+.schema-settings-titlebar {
+  padding-inline: 0;
+}
+
+.schema-settings-titlebar .setting-item-name {
+  display: flex;
+  align-items: center;
+  gap: var(--size-2-2, 8px);
+}
+
+.schema-settings-back-button {
+  margin-left: -6px;
+}
+
+.schema-settings-page-description {
+  margin: 0 0 16px 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* Types pane - compact filter + add toolbar (replaces the verbose
+ * Setting-row filter used by the legacy Objects tab). */
+.schema-types-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 14px 0;
+}
+
+.schema-types-filter {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 10px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  background: var(--background-primary);
+  color: var(--text-normal);
+  font-size: 13px;
+}
+
+.schema-types-add {
+  flex-shrink: 0;
+}
+
+/* "linked" / "local" badge on a field row's summary - marks a field as
+ * sourced from globalFields vs defined locally on the type. */
+.schema-field-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  vertical-align: middle;
+}
+
+.schema-field-badge-linked {
+  background: color-mix(in srgb, var(--text-accent) 18%, var(--background-primary));
+  color: var(--text-accent);
+}
+
+/* Inherited-fields collapsible block at the top of a type's Fields section.
+ * Read-only: each row shows the field name, type, and the ancestor type that
+ * contributed it. Clicking "from <type>" expands + scrolls to that ancestor's
+ * editor block in the Objects tree. */
+.schema-inherited-fields {
+  margin-bottom: 12px;
+  padding: 6px 10px;
+  border: 1px dashed var(--background-modifier-border);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--text-muted) 4%, var(--background-primary));
+}
+
+.schema-inherited-fields > summary {
+  list-style: none;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text-muted);
+  user-select: none;
+}
+
+.schema-inherited-fields > summary::-webkit-details-marker {
+  display: none;
+}
+
+.schema-inherited-label {
+  font-weight: 600;
+}
+
+.schema-inherited-list {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.schema-inherited-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  padding: 2px 0;
+}
+
+.schema-inherited-name strong {
+  font-weight: 600;
+}
+
+.schema-inherited-source {
+  margin-left: auto;
+  color: var(--text-accent);
+  text-decoration: none;
+  font-size: 11px;
+}
+
+.schema-inherited-source:hover {
+  text-decoration: underline;
+}
+
+/* Inline lookup-query preview. Lives under each lookup row's body. */
+.schema-lookup-preview-wrap {
+  margin-top: 6px;
+}
+
+.schema-lookup-preview {
+  margin: 6px 0;
+  padding: 6px 8px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  background: var(--background-secondary);
+  font-size: 12px;
+}
+
+.schema-lookup-preview-status {
+  color: var(--text-muted);
+  font-size: 11px;
+  margin-bottom: 4px;
+}
+
+.schema-lookup-preview-error {
+  color: var(--text-error);
+  font-family: var(--font-monospace);
+  font-size: 11px;
+  white-space: pre-wrap;
+}
+
+.schema-lookup-preview-list {
+  padding-left: 18px;
+  margin: 0;
+}
+
+.schema-lookup-preview-list li {
+  margin: 1px 0;
+}
+
+.schema-lookup-preview-more {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Rich type selector - custom dropdown for FieldType used in the Global
+ * Fields editor and the Add-field modal. Each popup row carries a small
+ * description line under the name so the user can see what each type does
+ * without leaving the row. */
+.schema-type-selector {
+  position: relative;
+  display: inline-block;
+  min-width: 220px;
+}
+
+.schema-type-selector-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 4px 10px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  background: var(--background-primary);
+  color: var(--text-normal);
+  cursor: pointer;
+  font-size: 13px;
+  font-family: inherit;
+  box-shadow: none;
+}
+
+.schema-type-selector-trigger:hover:not(:disabled) {
+  border-color: var(--interactive-accent);
+}
+
+.schema-type-selector-trigger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.schema-type-selector-current {
+  font-weight: 500;
+}
+
+.schema-type-selector-chevron {
+  margin-left: 8px;
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.schema-type-selector-popup {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 320px;
+  max-height: 380px;
+  overflow-y: auto;
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+  z-index: 100;
+  padding: 4px 0;
+}
+
+.schema-type-selector-row {
+  padding: 8px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.schema-type-selector-row:last-child {
+  border-bottom: none;
+}
+
+.schema-type-selector-row:hover {
+  background: var(--background-modifier-hover);
+}
+
+.schema-type-selector-row.active {
+  background: color-mix(in srgb, var(--text-accent) 14%, var(--background-primary));
+}
+
+.schema-type-selector-name {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-normal);
+  margin-bottom: 2px;
+}
+
+.schema-type-selector-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+/* Inline Formula preview - shown under the Expression textarea on click. */
+.schema-formula-preview {
+  margin: 6px 0;
+  padding: 6px 8px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  background: var(--background-secondary);
+  font-size: 12px;
+}
+
+.schema-formula-preview-status {
+  color: var(--text-muted);
+  font-size: 11px;
+  margin-bottom: 2px;
+}
+
+.schema-formula-preview-result {
+  font-family: var(--font-monospace);
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.schema-formula-preview-error {
+  color: var(--text-error);
+  font-family: var(--font-monospace);
+  font-size: 11px;
+  white-space: pre-wrap;
+}
+
+/* Chip list for MultiFile / Multi / MultiMedia editor in the field-edit modal.
+ * Replaces the textarea fallback so users can add / remove individual values
+ * with the same type-scoped picker that File fields use. */
+.schema-multi-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 6px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  background: var(--background-secondary);
+  min-height: 40px;
+}
+
+.schema-multi-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px 2px 8px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--text-muted) 12%, var(--background-primary));
+  border: 1px solid color-mix(in srgb, var(--text-muted) 24%, transparent);
+  font-size: 12px;
+  color: var(--text-normal);
+}
+
+.schema-multi-chip-label {
+  font-weight: 500;
+}
+
+.schema-multi-chip-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1;
+}
+
+.schema-multi-chip-close:hover {
+  background: var(--background-modifier-hover);
+  color: var(--text-error);
+}
+
+.schema-multi-add {
+  padding: 2px 10px;
+  border-radius: 12px;
+  border: 1px dashed var(--background-modifier-border);
+  background: transparent;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--text-muted);
+}
+
+.schema-multi-add:hover {
+  color: var(--text-normal);
+  background: var(--background-modifier-hover);
+}
+
+.schema-inline-warning {
+  display: none;
+  margin: 4px 0 0 0;
+  padding: 4px 8px;
+  font-size: 12px;
+  color: var(--text-error);
+  border-left: 2px solid var(--text-error);
+  background: color-mix(in srgb, var(--text-error) 5%, var(--background-primary));
+  border-radius: 2px;
+}
+
+.schema-inline-warning.visible {
+  display: block;
+}
+
+.schema-input-invalid {
+  border-color: var(--text-error) !important;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--text-error) 30%, transparent);
+}
+
+.schema-validation-banner {
+  margin: 8px 0 16px 0;
+  padding: 8px 12px;
+  border: 1px solid var(--background-modifier-border);
+  border-left: 3px solid var(--text-error);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--text-error) 6%, var(--background-primary));
+}
+
+.schema-validation-banner strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+
+.schema-modal-error {
+  margin-bottom: 12px;
+  padding: 6px 10px;
+  border-left: 3px solid var(--text-error);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--text-error) 8%, var(--background-primary));
+  color: var(--text-error);
+  font-size: 13px;
+}
+
+
+/* Type header banner - subtle strip at the top of typed-note views */
+.schema-type-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 14px;
+  height: 26px;
+  font-size: 11px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  background: color-mix(in srgb, var(--type-color, var(--text-muted)) 8%, var(--background-primary));
+  color: var(--type-color, var(--text-muted));
+  user-select: none;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: background 80ms ease;
+}
+
+.schema-type-banner:hover {
+  background: color-mix(in srgb, var(--type-color, var(--text-muted)) 14%, var(--background-primary));
+}
+
+.schema-type-banner-icon {
+  display: inline-flex;
+  align-items: center;
+  width: 14px;
+  height: 14px;
+  opacity: 0.85;
+}
+
+.schema-type-banner-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.schema-type-banner-name {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+}
+
+.schema-type-banner-sep {
+  margin: 0 0.4em;
+  font-weight: 400;
+  opacity: 0.5;
+}
+
+.schema-type-banner-ancestor {
+  font-weight: 400;
+  opacity: 0.6;
+}
+
+.schema-type-banner-label {
+  margin-left: auto;
+  color: var(--text-faint);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* "Tint tab and header": extend the banner's object-type color across the file
+   tab and the view header so the chrome above the note reads as one block. All
+   three regions mix the same 8% of --type-color over --background-primary as the
+   banner, landing on the identical color.
+
+   The active tab is painted by overriding Obsidian's own --tab-background-active
+   variable rather than its background directly: the active tab's rounded
+   connector pseudo-elements also read that variable, so overriding it tints the
+   tab face AND the connectors (a direct background leaves the connectors at the
+   default color, showing as stray spots near the tab base). Inactive tabs are
+   transparent by default, so those get a direct background.
+
+   The view header needs !important to beat core's focused-state rule
+   `.is-focused .workspace-leaf.mod-active .view-header` (specificity 0,3,0),
+   which otherwise wins whenever the window is focused. */
+.workspace-tab-header.schema-chrome-tinted {
+  --tab-background-active: color-mix(in srgb, var(--type-color, var(--text-muted)) 8%, var(--background-primary));
+}
+
+.workspace-tab-header.schema-chrome-tinted:not(.is-active) {
+  background-color: color-mix(in srgb, var(--type-color, var(--text-muted)) 8%, var(--background-primary));
+}
+
+.view-header.schema-chrome-tinted {
+  background-color: color-mix(in srgb, var(--type-color, var(--text-muted)) 8%, var(--background-primary)) !important;
+}
+
+/* Typed wikilink suggest rows */
+.schema-suggest-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.schema-suggest-main {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.schema-suggest-path {
+  color: var(--text-faint);
+  font-size: 11px;
+  margin-right: 6px;
+  font-family: var(--font-monospace);
+}
+
+.schema-suggest-icon {
+  display: inline-flex;
+  align-items: center;
+  width: 14px;
+  height: 14px;
+  opacity: 0.7;
+}
+
+.schema-suggest-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+
+/* Settings tab - type list */
+.schema-types-list {
+  margin-top: 8px;
+}
+
+.schema-type-block {
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  margin-bottom: 8px;
+  padding: 6px 12px;
+  background: var(--background-secondary);
+}
+
+.schema-type-block > summary {
+  cursor: pointer;
+  padding: 6px 0;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  list-style: none;
+}
+
+.schema-type-block > summary::-webkit-details-marker,
+.schema-field-row summary::-webkit-details-marker,
+.schema-lookup-row summary::-webkit-details-marker {
+  display: none;
+}
+
+.schema-field-row summary,
+.schema-lookup-row summary {
+  list-style: none;
+}
+
+/* Rotating chevron next to the chip / row name. Defaults to pointing right
+ * (collapsed); rotates to pointing down when the parent <details> is open. */
+.schema-summary-chevron {
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-muted);
+  transition: transform 0.12s ease-out;
+  flex-shrink: 0;
+}
+
+.schema-summary-chevron svg {
+  width: 14px;
+  height: 14px;
+}
+
+details[open] > summary > .schema-summary-chevron {
+  transform: rotate(90deg);
+}
+
+.schema-type-block[open] > summary {
+  border-bottom: 1px solid var(--background-modifier-border);
+  margin-bottom: 8px;
+}
+
+.schema-type-block summary strong {
+  font-size: 14px;
+}
+
+/* Chip wrapping the type's icon + name in the collapsed summary. The chip's
+ * background is derived from the type's defaults.color (set inline as
+ * --type-color); falls back to a neutral muted background when no color set. */
+.schema-type-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--type-color, var(--text-muted)) 14%, var(--background-primary));
+  color: var(--type-color, var(--text-normal));
+  border: 1px solid color-mix(in srgb, var(--type-color, var(--text-muted)) 28%, transparent);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.schema-type-chip .schema-type-icon {
+  display: inline-flex;
+  align-items: center;
+}
+
+.schema-type-chip .schema-type-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.schema-type-chip .schema-type-name {
+  font-size: 13px;
+  letter-spacing: 0.02em;
+}
+
+.schema-type-meta {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: var(--font-monospace);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Children of an `extends:` parent are nested inside .schema-type-children.
+ * Instead of a single rail on the container, each child draws its own curved
+ * L-shaped connector (::before) plus a vertical continuation (::after) when it
+ * isn't the last sibling - together they form a tree with rounded corners. */
+.schema-type-children {
+  margin-left: 18px;
+  padding-left: 16px;
+  margin-top: 6px;
+  margin-bottom: 14px;
+}
+
+.schema-type-children > .schema-type-block {
+  position: relative;
+  margin-bottom: 6px;
+}
+
+/* Curved L: vertical segment from the top of the child, curving right at the
+ * row's visual center so it meets the chip's baseline. */
+.schema-type-children > .schema-type-block::before {
+  content: "";
+  position: absolute;
+  left: -16px;
+  top: -6px;
+  width: 14px;
+  height: 26px;
+  border-left: 1px solid var(--background-modifier-border);
+  border-bottom: 1px solid var(--background-modifier-border);
+  border-bottom-left-radius: 10px;
+  pointer-events: none;
+}
+
+/* Vertical continuation linking to the next sibling. */
+.schema-type-children > .schema-type-block:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: -16px;
+  top: 20px;
+  bottom: -6px;
+  width: 1px;
+  background: var(--background-modifier-border);
+  pointer-events: none;
+}
+
+.schema-type-children > .schema-type-block:last-child {
+  margin-bottom: 0;
+}
+
+/* Give root-level types extra breathing room so distinct branches read clearly
+ * apart from the tighter intra-branch sibling spacing. */
+.schema-types-list > .schema-type-block {
+  margin-bottom: 14px;
+}
+
+/* === Section cards (per-object-type editor, global-fields editor) =====
+ *
+ * Replaces the "h5 heading + .schema-section-indent rail + dark per-row
+ * Setting cards" pattern. Each section is now ONE rounded card; rows
+ * inside the card are flat (transparent background, thin bottom divider).
+ *
+ * Visual hierarchy: section card > section header > section body > rows.
+ * Long-form text inside the header (count chip, description) is muted so
+ * the title + inputs stay the focal point.
+ */
+.schema-section {
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  background: var(--background-primary);
+  margin: 14px 0;
+  overflow: hidden;
+}
+
+.schema-section-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--background-secondary);
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+/* Bottom divider only when expanded, so the body is visually attached. */
+.schema-section[open] > .schema-section-header {
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.schema-section-header::-webkit-details-marker {
+  display: none;
+}
+
+.schema-section-header:hover {
+  background: var(--background-modifier-hover);
+}
+
+.schema-section-chevron {
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  margin-top: 1px;
+  transition: transform 120ms ease;
+}
+
+.schema-section-chevron svg {
+  width: 16px;
+  height: 16px;
+}
+
+.schema-section[open] > .schema-section-header .schema-section-chevron {
+  transform: rotate(90deg);
+}
+
+.schema-section-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.schema-section-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.schema-section-title {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-normal);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.schema-section-count {
+  font-size: 11px;
+  color: var(--text-muted);
+  background: var(--background-modifier-hover);
+  padding: 1px 8px;
+  border-radius: 10px;
+}
+
+.schema-section-body {
+  padding: 0;
+}
+
+.schema-section-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.schema-section .schema-empty {
+  padding: 4px 14px 10px 14px;
+}
+
+.schema-section .schema-inheritance-hint {
+  padding: 4px 14px 6px 14px;
+}
+
+/* Field/lookup lists rendered directly into the section body need horizontal
+ * padding so the inner row borders don't run flush to the card edge. */
+.schema-section-body > .schema-fields-list,
+.schema-section-body > .schema-lookups-list {
+  padding: 0 14px 12px 14px;
+}
+
+/* Flat rows inside a section: no per-row backgrounds, thin dividers. */
+.schema-section .setting-item {
+  background: transparent;
+  border: none;
+  border-top: 1px solid var(--background-modifier-border);
+  border-radius: 0;
+  padding: 12px 14px;
+  align-items: flex-start;
+}
+
+.schema-section-body > .setting-item:first-child,
+.schema-section-body > .schema-section-row-block:first-child,
+.schema-section-desc + .setting-item,
+.schema-section-desc + .schema-section-row-block {
+  border-top: none;
+}
+
+.schema-section .setting-item-info {
+  padding-right: 12px;
+}
+
+.schema-section .setting-item-name {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.schema-section .setting-item-description {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.45;
+  padding-top: 2px;
+}
+
+/* === Row appendices (tucked status, inline action bar) ================
+ *
+ * Some rows need more than a label/desc/input - the Filename pattern row
+ * has a live preview, the Body template row has an Active line, a diff
+ * hint, a warning, and Save/Load buttons. These appendices sit immediately
+ * below the row inside the same `.schema-section-row-block` wrapper, so
+ * they look anchored to the input they belong to instead of floating.
+ */
+.schema-section-row-block {
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+.schema-section-row-block:first-child,
+.schema-section-desc + .schema-section-row-block {
+  border-top: none;
+}
+
+.schema-section-row-block > .setting-item {
+  border-top: none;
+  padding-bottom: 4px;
+}
+
+.schema-section-row-appendix {
+  padding: 0 14px 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.schema-section-row-appendix:empty {
+  display: none;
+}
+
+.schema-section-row-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px 12px 14px;
+  flex-wrap: wrap;
+}
+
+.schema-section-row-actions:empty {
+  display: none;
+}
+
+/* Small explanatory note that sits left of the action buttons (e.g. "Syncs
+ * frontmatter only - template body is preserved."). */
+.schema-section-row-actions-note {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-style: italic;
+  margin-right: auto;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* === Settings landing footer (version label) ========================= */
+
+.schema-settings-version {
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-faint);
+  padding: 24px 0 8px 0;
+  margin-top: 8px;
+  font-family: var(--font-monospace);
+  letter-spacing: 0.04em;
+}
+
+/* === Type-block footer (Clone / Delete) =============================== */
+
+.schema-type-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 4px 4px 4px;
+  margin-top: 10px;
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+.schema-empty {
+  font-size: 12px;
+  color: var(--text-faint);
+  font-style: italic;
+  padding: 4px 0;
+}
+
+.schema-stub-list {
+  margin: 0 0 0 16px;
+  padding: 0;
+  font-size: 12px;
+}
+
+.schema-stub-list li {
+  margin: 2px 0;
+  font-family: var(--font-monospace);
+}
+
+.schema-inheritance-hint {
+  font-size: 11px;
+  color: var(--text-faint);
+  font-style: italic;
+  padding: 2px 0 6px 0;
+  font-family: var(--font-monospace);
+}
+
+.schema-filename-preview {
+  font-size: 11px;
+  color: var(--text-faint);
+  font-family: var(--font-monospace);
+}
+
+.schema-query-playground-input {
+  margin: 8px 0;
+  padding: 6px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  background: var(--background-primary);
+  color: var(--text-normal);
+}
+
+.schema-query-status {
+  margin: 8px 0 4px 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.schema-query-results ul {
+  margin: 0 0 0 16px;
+  padding: 0;
+  font-size: 12px;
+  font-family: var(--font-monospace);
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.schema-formula-value {
+  padding: 6px 8px;
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  font-family: var(--font-monospace);
+  font-size: 13px;
+  margin: 4px 0;
+}
+
+.schema-formula-expr {
+  font-size: 11px;
+  color: var(--text-faint);
+  font-family: var(--font-monospace);
+  padding: 2px 0;
+}
+
+.schema-validation-list {
+  margin: 0 0 0 16px;
+  padding: 0;
+  font-size: 12px;
+  color: var(--text-error);
+}
+
+.schema-types-heading {
+  margin-top: 24px;
+}
+
+
+/* === Backlinks cards (per-type editor) ============================== */
+
+.schema-backlinks-card {
+  margin: 8px 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s, 6px);
+  background: color-mix(in srgb, var(--text-accent) 4%, var(--background-primary));
+}
+
+.schema-section-body > .schema-backlinks-card:first-child {
+  margin-top: 12px;
+}
+
+.schema-section-body > .schema-backlinks-card:last-child {
+  margin-bottom: 12px;
+}
+
+.schema-backlinks-card-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.schema-backlinks-card-icon {
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-accent);
+}
+
+.schema-backlinks-card-name {
+  font-family: var(--font-monospace);
+  font-size: 13px;
+  color: var(--text-accent);
+}
+
+.schema-backlinks-card-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.schema-backlinks-card-sample {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 6px 0 4px 0;
+}
+
+.schema-backlinks-card-sample-intro {
+  margin-bottom: 4px;
+}
+
+.schema-backlinks-card-sample-list {
+  margin: 0 0 4px 0;
+  padding-left: 18px;
+}
+
+.schema-backlinks-card-sample-list li {
+  margin: 1px 0;
+}
+
+.schema-backlinks-card-sample-list a {
+  color: var(--text-normal);
+  text-decoration: none;
+}
+
+.schema-backlinks-card-sample-list a:hover {
+  text-decoration: underline;
+}
+
+.schema-backlinks-card-sample-more {
+  font-style: italic;
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.schema-backlinks-card-footer {
+  margin-top: 6px;
+}
+
+.schema-backlinks-card-footer .setting-item {
+  padding: 4px 0;
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+/* === Custom lookups collapsed section ================================
+ * A `<details>` element styled as a section card. The summary doubles as
+ * the section header strip and is clickable to toggle. Body is hidden
+ * when collapsed.
+ */
+.schema-custom-lookups {
+  padding: 0;
+}
+
+.schema-custom-lookups-summary {
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+}
+
+.schema-custom-lookups-summary::-webkit-details-marker {
+  display: none;
+}
+
+.schema-custom-lookups:not([open]) {
+  /* Collapsed: hide the bottom border that the open state shows */
+}
+
+.schema-custom-lookups:not([open]) > .schema-custom-lookups-summary {
+  border-bottom: none;
+}
+
+.schema-lookup-landing {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 4px 0 8px 0;
+  padding: 6px 8px;
+  background: var(--background-secondary);
+  border-radius: 4px;
+}
+
+/* === Global-property "Backlinks name" cause-effect hint ============== */
+
+.schema-backlinks-hint {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.schema-backlinks-hint code {
+  font-family: var(--font-monospace);
+  font-size: 12px;
+}
+
+.schema-backlinks-hint a {
+  color: var(--text-accent);
+  text-decoration: none;
+}
+
+.schema-backlinks-hint a:hover {
+  text-decoration: underline;
+}
+
+.schema-backlinks-hint-warn {
+  color: var(--text-warning, var(--text-error));
+}
+
+/* Field/lookup row editors - match the type-block "card" pattern but with a
+ * darker background so they read as nested children. */
+.schema-fields-list,
+.schema-lookups-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.schema-field-row,
+.schema-lookup-row {
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  background: var(--background-primary);
+  padding: 0;
+}
+
+.schema-field-row > details > summary,
+.schema-field-row > summary,
+.schema-lookup-row > details > summary {
+  cursor: pointer;
+  padding: 6px 10px;
+  font-family: var(--font-monospace);
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.schema-field-row > details[open] > summary,
+.schema-field-row[open] > summary,
+.schema-lookup-row > details[open] > summary {
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.schema-field-body,
+.schema-lookup-body {
+  padding: 6px 10px 8px 10px;
+}
+
+.schema-field-row .schema-row-text,
+.schema-lookup-row .schema-row-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Action toolbar pinned to the right of a row's <summary>. */
+.schema-row-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.schema-row-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--text-muted);
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.schema-row-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.schema-row-btn:hover:not(:disabled) {
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.schema-row-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.schema-row-btn-danger:hover:not(:disabled) {
+  background: var(--background-modifier-error-hover, rgba(255, 80, 80, 0.15));
+  color: var(--text-error);
+}
+
+/* Auto-refreshed fields list (global config) */
+.schema-auto-refreshed-editor {
+  margin-bottom: 18px;
+}
+
+.schema-arf-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 8px 0;
+}
+
+.schema-arf-row {
+  display: grid;
+  grid-template-columns: 1fr 140px 32px;
+  gap: 10px;
+  align-items: center;
+  padding: 4px 8px;
+}
+
+.schema-arf-name {
+  padding: 4px 8px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  background: var(--background-primary);
+  color: var(--text-normal);
+  font-size: 13px;
+}
+
+.schema-arf-btn {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  background: var(--background-primary);
+  color: var(--text-normal);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.schema-arf-btn:hover {
+  background: var(--background-modifier-hover);
+}
+
+.schema-arf-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.schema-arf-del {
+  color: var(--text-error);
+}
+
+/* Folder mappings list (global config) */
+.schema-folder-mappings-editor {
+  margin-bottom: 18px;
+}
+
+.schema-fm-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 8px 0;
+}
+
+.schema-fm-row {
+  display: grid;
+  grid-template-columns: 1fr 160px auto auto;
+  gap: 6px;
+  align-items: center;
+}
+
+.schema-fm-enforce {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.schema-cf-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 8px 0;
+}
+
+.schema-cf-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  background: var(--background-secondary);
+}
+
+.schema-cf-head {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.schema-cf-name {
+  flex: 1;
+  padding: 4px 8px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  background: var(--background-primary);
+  font-family: var(--font-monospace);
+  font-size: 13px;
+}
+
+.schema-cf-body {
+  width: 100%;
+  font-family: var(--font-monospace);
+  font-size: 12px;
+  padding: 6px 8px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  background: var(--background-primary);
+  color: var(--text-normal);
+  resize: vertical;
+  min-height: 60px;
+}
+
+.schema-cf-status {
+  font-size: 11px;
+  font-family: var(--font-monospace);
+}
+
+.schema-cf-status-ok {
+  color: var(--text-success, var(--color-green, #3fb950));
+}
+
+.schema-cf-status-error {
+  color: var(--text-error);
+}
+
+/* File-explorer type icons. Prepended to .nav-file-title so they sit before
+ * the filename. Sized to match Obsidian's existing nav-file icons. */
+.schema-file-explorer-icon {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 6px;
+  color: var(--type-color, var(--text-muted));
+  opacity: 0.9;
+  flex-shrink: 0;
+}
+
+.schema-file-explorer-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.schema-has-file-explorer-icon {
+  display: flex;
+  align-items: center;
+}
+
+/* "Tab icon": the note's type icon, colored with the type color, injected as
+   the first child of the tab's inner element. Obsidian's own tab icon slot is
+   hidden in the main tab bar, so we add our own element and size it here. */
+.workspace-tab-header-inner > .schema-tab-icon {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 5px;
+  color: var(--type-color, var(--text-muted));
+  flex-shrink: 0;
+}
+
+.workspace-tab-header-inner > .schema-tab-icon svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* First-type walkthrough - shown in place of the empty Objects list. */
+.schema-walkthrough {
+  padding: 20px;
+  margin: 12px 0;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  background: var(--background-secondary);
+}
+
+.schema-walkthrough h3 {
+  margin-top: 0;
+  margin-bottom: 6px;
+}
+
+.schema-walkthrough-intro {
+  margin-top: 0;
+  color: var(--text-muted);
+}
+
+.schema-walkthrough-steps {
+  padding-left: 24px;
+  margin: 16px 0;
+}
+
+.schema-walkthrough-steps li {
+  margin-bottom: 12px;
+}
+
+.schema-walkthrough-body {
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.schema-walkthrough-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.schema-walkthrough-actions button {
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.schema-walkthrough-hint {
+  margin-top: 16px;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.schema-fm-folder,
+.schema-fm-type {
+  padding: 4px 8px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  background: var(--background-primary);
+  color: var(--text-normal);
+  font-size: 13px;
+}
+
+.schema-fm-folder {
+  font-family: var(--font-monospace);
+}
+
+/* Color picker control (per-type Defaults) */
+.schema-color-control {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.schema-color-swatch {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  padding: 0;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  cursor: pointer;
+  background: transparent;
+}
+
+.schema-color-text {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 8px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  background: var(--background-primary);
+  color: var(--text-normal);
+  font-family: var(--font-monospace);
+  font-size: 13px;
+}
+
+/* Icon control (per-type Defaults) */
+.schema-icon-control {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.schema-icon-preview {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  background: var(--background-primary);
+}
+
+.schema-icon-preview svg {
+  width: 18px;
+  height: 18px;
+}
+
+.schema-icon-text {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 8px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  background: var(--background-primary);
+  color: var(--text-normal);
+  font-size: 13px;
+}
+
+/* Small "universal" tag shown beside a property name in a type's Defaults
+ * section, in place of a wordy description line. */
+.schema-universal-tag {
+  margin-left: 8px;
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-accent);
+  background: color-mix(in srgb, var(--text-accent) 14%, transparent);
+  padding: 1px 6px;
+  border-radius: 8px;
+  vertical-align: middle;
+}
+
+/* Chip overlay rendered by TypeChipPropertyManager on top of the `type:`
+ * property value cell in the properties pane. The underlying value text/input
+ * stays in place so editing still works - the chip just covers it visually
+ * when the cell is not focused. */
+.schema-has-type-chip {
+  position: relative;
+}
+
+.schema-has-type-chip > :not(.schema-type-property-chip) {
+  visibility: hidden;
+}
+
+.schema-has-type-chip:focus-within > :not(.schema-type-property-chip) {
+  visibility: visible;
+}
+
+.schema-has-type-chip:focus-within > .schema-type-property-chip {
+  display: none;
+}
+
+.schema-type-property-chip {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--type-color, var(--text-muted)) 14%, var(--background-primary));
+  color: var(--type-color, var(--text-normal));
+  border: 1px solid color-mix(in srgb, var(--type-color, var(--text-muted)) 28%, transparent);
+  font-weight: 600;
+  font-size: 13px;
+  pointer-events: auto;
+  cursor: pointer;
+  user-select: none;
+  z-index: 1;
+  transition: background 80ms ease;
+}
+
+.schema-type-property-chip:hover {
+  background: color-mix(in srgb, var(--type-color, var(--text-muted)) 22%, var(--background-primary));
+}
+
+.schema-type-property-chip .schema-type-icon {
+  display: inline-flex;
+  align-items: center;
+}
+
+.schema-type-property-chip .schema-type-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.schema-type-property-chip .schema-type-name {
+  letter-spacing: 0.02em;
+}
+
+/* Lookup block (live-rendered code blocks) */
+.schema-lookup-block {
+  margin: 8px 0;
+}
+
+.schema-lookup-block ul {
+  margin: 0 0 0 16px;
+  padding: 0;
+  list-style: disc;
+}
+
+.schema-lookup-block li {
+  margin: 2px 0;
+}
+
+/* TypeSwitcherModal - suggestion row layout. Mirrors the settings-tab chip
+ * styling so the modal feels native to the rest of the plugin's UI. */
+.schema-switcher-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 2px 0;
+}
+
+.schema-switcher-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--type-color, var(--text-muted)) 14%, var(--background-primary));
+  color: var(--type-color, var(--text-normal));
+  border: 1px solid color-mix(in srgb, var(--type-color, var(--text-muted)) 28%, transparent);
+  font-weight: 600;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.schema-switcher-icon {
+  display: inline-flex;
+  align-items: center;
+}
+
+.schema-switcher-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.schema-switcher-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* AbstractInputSuggest rows for the template-file / folder pickers. */
+.schema-file-suggest-row {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 8px;
+  line-height: 1.2;
+}
+
+.schema-file-suggest-name {
+  font-size: 13px;
+}
+
+.schema-file-suggest-path {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* Live UI preview shown under Appearance toggles. Hosts real banner / chip
+ * / file-icon samples rather than ASCII boxes. */
+.schema-appearance-preview {
+  margin: 8px 0 0 0;
+  padding: 8px 10px;
+  background: var(--background-secondary);
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.schema-appearance-preview-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.schema-appearance-preview-key {
+  color: var(--text-muted);
+  min-width: 64px;
+}
+
+.schema-appearance-preview-value {
+  color: var(--text-normal);
+}
+
+.schema-appearance-preview-chip {
+  background: transparent;
+}
+
+.schema-appearance-preview-explorer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+/* "Tint tab and header" preview: a mini window with a tinted tab, header, and
+   banner stacked flush so the shared object-type color is obvious. */
+.schema-chrome-preview {
+  padding: 0;
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid var(--background-modifier-border);
+}
+
+.schema-chrome-preview-tabbar {
+  display: flex;
+  background: var(--background-secondary);
+  padding: 4px 4px 0 4px;
+}
+
+.schema-chrome-preview-tab {
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 4px 4px 0 0;
+  color: var(--text-muted);
+  background-color: color-mix(in srgb, var(--type-color, var(--text-muted)) 8%, var(--background-primary));
+}
+
+.schema-chrome-preview-header {
+  height: 18px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  background-color: color-mix(in srgb, var(--type-color, var(--text-muted)) 8%, var(--background-primary));
+}
+
+.schema-chrome-preview .schema-type-banner {
+  cursor: default;
+}
+
+/* "Tab title / tab icon" preview: a single mock tab pill. */
+.schema-tab-preview-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  padding: 4px 12px;
+  font-size: 13px;
+  border-radius: 6px;
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+}
+
+.schema-tab-preview-tab .schema-tab-icon {
+  display: inline-flex;
+  align-items: center;
+  color: var(--type-color, var(--text-muted));
+}
+
+.schema-tab-preview-tab .schema-tab-icon svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* === Inline greyed-out inherited property rows ====================== */
+
+.schema-fields-inherited {
+  border-left: 2px dashed var(--background-modifier-border);
+}
+
+.schema-field-row.schema-inherited-row {
+  opacity: 0.72;
+}
+
+.schema-field-row.schema-inherited-row > details > summary .schema-row-text strong {
+  font-weight: 500;
+}
+
+/* === Global properties: faint expanded card + Used-by chips ========= */
+
+.schema-gf-expanded {
+  background: var(--background-secondary);
+  border-radius: var(--radius-s, 4px);
+  padding: 8px 10px;
+  margin-top: 4px;
+}
+
+.schema-data-type-desc {
+  width: 100%;
+  margin-top: 4px;
+  text-align: right;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.schema-gf-used-by {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--background-modifier-border);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.schema-gf-used-by-label {
+  margin-right: 6px;
+}
+
+.schema-gf-used-by-chip {
+  color: var(--text-accent);
+}
+
+/* === Auto-refreshed properties: column headers + usage cell ========= */
+
+.schema-arf-header {
+  display: grid;
+  grid-template-columns: 1fr 140px 32px;
+  gap: 10px;
+  align-items: center;
+  padding: 4px 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.schema-arf-usage {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.schema-arf-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* === Custom-filters help block ====================================== */
+
+.schema-cf-help {
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: var(--background-secondary);
+  border-radius: var(--radius-s, 4px);
+}
+
+.schema-cf-help > summary {
+  cursor: pointer;
+  color: var(--text-accent);
+  font-size: 13px;
+}
+
+.schema-cf-help-body {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.schema-cf-help-body p {
+  margin: 0 0 6px 0;
+}
+
+.schema-cf-help-example {
+  background: var(--background-primary-alt, var(--background-primary));
+  padding: 6px 8px;
+  border-radius: 4px;
+  font-family: var(--font-monospace);
+  font-size: 12px;
+  margin: 0 0 6px 0;
+  white-space: pre-wrap;
+}
+
+/* === Body template inline status + diff hint =========================
+ *
+ * The Active card is the visual anchor of the Body template row: a
+ * highlighted strip with a file-text icon, the template's path
+ * (monospace, normal text color), a small muted source-of-detection
+ * line, and the sync pill on the right. Replaces the previous one-line
+ * muted "Active: <path>" sentence.
+ */
+.schema-body-template-status {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.schema-body-template-active {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  background: var(--background-secondary);
+}
+
+.schema-body-template-active-icon {
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-accent);
+  flex-shrink: 0;
+}
+
+.schema-body-template-active-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.schema-body-template-active-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1;
+  min-width: 0;
+}
+
+.schema-body-template-active-path {
+  font-family: var(--font-monospace);
+  font-size: 12px;
+  color: var(--text-normal);
+  font-weight: 500;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+
+.schema-body-template-active-source {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.schema-body-template-diff {
+  font-size: 12px;
+  color: var(--text-accent);
+}
+
+.schema-body-template-diff:empty {
+  display: none;
+}
+
+/* === Sync pill (template ↔ schema agreement indicator) ==============
+ * Green check when the template's frontmatter matches the schema's
+ * property list; amber warning when they differ. Sits inline after the
+ * "Active: <path>" line.
+ */
+.schema-sync-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.schema-sync-pill-icon {
+  display: inline-flex;
+  align-items: center;
+}
+
+.schema-sync-pill-icon svg {
+  width: 12px;
+  height: 12px;
+}
+
+.schema-sync-pill.is-ok {
+  color: var(--text-success, var(--color-green, #2bb673));
+  background: color-mix(in srgb, var(--text-success, var(--color-green, #2bb673)) 14%, transparent);
+}
+
+.schema-sync-pill.is-warn {
+  color: var(--text-warning, var(--color-orange, #d99e3a));
+  background: color-mix(in srgb, var(--text-warning, var(--color-orange, #d99e3a)) 16%, transparent);
+}
+
+/* === Body-template sync: expandable settings-vs-template comparison ===
+ * The card (path + source + sync pill) is a <summary> that toggles a
+ * two-column grid comparing the object type's properties to the template's
+ * frontmatter, with missing / extra / type-mismatched rows highlighted.
+ */
+.schema-template-compare {
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  background: var(--background-secondary);
+  overflow: hidden;
+}
+
+.schema-template-compare > summary {
+  /* Reuses .schema-body-template-active layout, but as a clickable summary. */
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  cursor: pointer;
+  list-style: none;
+}
+
+.schema-template-compare > summary::-webkit-details-marker {
+  display: none;
+}
+
+.schema-template-compare-chevron {
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  transition: transform 120ms ease;
+}
+
+.schema-template-compare[open] .schema-template-compare-chevron {
+  transform: rotate(180deg);
+}
+
+.schema-template-compare-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 10px 10px 10px;
+}
+
+.schema-template-compare-reason {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 8px;
+  border-radius: 4px;
+  color: var(--text-warning, var(--color-orange, #d99e3a));
+  background: color-mix(in srgb, var(--text-warning, var(--color-orange, #d99e3a)) 12%, transparent);
+  border-left: 2px solid var(--text-warning, var(--color-orange, #d99e3a));
+}
+
+.schema-template-compare-grid {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 2px 8px;
+  align-items: center;
+}
+
+.schema-template-compare-head {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  padding-bottom: 2px;
+}
+
+.schema-template-compare-cell {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  padding: 3px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.schema-template-compare-name {
+  font-family: var(--font-monospace);
+  color: var(--text-normal);
+  overflow-wrap: anywhere;
+}
+
+.schema-template-compare-type {
+  font-size: 10px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.schema-template-compare-absent {
+  color: var(--text-faint);
+}
+
+.schema-template-compare-gutter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-monospace);
+  font-size: 13px;
+  color: var(--text-muted);
+  min-width: 18px;
+}
+
+/* Per-status highlighting. `match` stays muted; the rest use the warning tone. */
+.schema-template-compare-cell.schema-compare-missing-in-template,
+.schema-template-compare-cell.schema-compare-extra-in-template,
+.schema-template-compare-cell.schema-compare-type-mismatch {
+  background: color-mix(in srgb, var(--text-warning, var(--color-orange, #d99e3a)) 12%, transparent);
+}
+
+.schema-template-compare-gutter.schema-compare-missing-in-template,
+.schema-template-compare-gutter.schema-compare-extra-in-template,
+.schema-template-compare-gutter.schema-compare-type-mismatch {
+  color: var(--text-warning, var(--color-orange, #d99e3a));
+  font-weight: 600;
+}
+
+.schema-template-compare-cell.schema-compare-match {
+  color: var(--text-muted);
+}
+
+/* === Remove-property modal options ================================== */
+
+.schema-remove-property-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0;
+  cursor: pointer;
+}
+
+.schema-remove-property-option input[type="radio"] {
+  margin: 0;
+}
+
+/* === Disabled-setting visual cue (used when Templater absent) ======= */
+
+.schema-setting-disabled {
+  opacity: 0.6;
+}
+
+/* === Mobile overrides for Schema's custom editor grids ==============
+ * Obsidian's native Setting/SettingGroup CSS handles the bulk of the
+ * mobile styling. These overrides target Schema's own custom widgets
+ * (folder-mappings grid, auto-refreshed-fields grid, type tree) so they
+ * don't force horizontal scroll on phones. */
+
+/* Landing-page link rows: keep the chevron inline + vertically centered on
+ * mobile. Obsidian's mobile CSS sets .setting-item to flex-direction: column
+ * with the same selector specificity, so we need !important to win - and
+ * we use both `.is-mobile` and `body.is-mobile` selectors plus the chained
+ * class so this overrides every Obsidian build. */
+.is-mobile .schema-settings-page-link.setting-item,
+body.is-mobile .schema-settings-page-link.setting-item {
+  flex-direction: row !important;
+  align-items: center !important;
+}
+
+.is-mobile .schema-settings-page-link.setting-item .setting-item-info,
+body.is-mobile .schema-settings-page-link.setting-item .setting-item-info {
+  flex: 1 1 auto !important;
+  margin-right: 12px !important;
+  width: auto !important;
+}
+
+.is-mobile .schema-settings-page-link.setting-item .setting-item-control,
+body.is-mobile .schema-settings-page-link.setting-item .setting-item-control {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+  justify-content: flex-end !important;
+}
+
+.is-mobile .schema-fm-row {
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+
+.is-mobile .schema-arf-row {
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+
+.is-mobile .schema-type-selector {
+  min-width: 0;
+  width: 100%;
+  display: block;
+}
+
+.is-mobile .schema-type-selector-popup {
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+}
+
+.is-mobile .schema-types-toolbar {
+  flex-wrap: wrap;
+}
+
+.is-mobile .schema-types-filter,
+.is-mobile .schema-types-add {
+  flex-basis: 100%;
+}
+
+/* Drop the dashed L-connector in the type tree on narrow viewports  - 
+ * costs horizontal room and reads busy. Flat indent instead. */
+.is-mobile .schema-type-children {
+  margin-left: 8px;
+  padding-left: 8px;
+}
+
+.is-mobile .schema-type-children > .schema-type-block::before,
+.is-mobile .schema-type-children > .schema-type-block::after {
+  display: none;
+}
+
+.is-mobile .schema-color-text {
+  width: auto;
+  flex: 1;
+}
+
+/* Stack the settings/template comparison into one column on mobile. The
+ * per-row highlight backgrounds still convey which properties differ. */
+.is-mobile .schema-template-compare-grid {
+  grid-template-columns: 1fr;
+}
+
+.is-mobile .schema-template-compare-head,
+.is-mobile .schema-template-compare-gutter {
+  display: none;
+}

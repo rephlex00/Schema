@@ -1,0 +1,37 @@
+{
+  "name": "obsidian-schema",
+  "version": "2026.6.20",
+  "description": "Typed-note workflow for Obsidian.",
+  "main": "main.js",
+  "scripts": {
+    "dev": "node esbuild.config.mjs",
+    "build": "tsc --noEmit --skipLibCheck && node esbuild.config.mjs production",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "version:bump": "node scripts/bump-version.mjs",
+    "deploy": "node esbuild.config.mjs production && node scripts/bump-version.mjs && cp main.js manifest.json styles.css \"${OBSIDIAN_PLUGIN_DIR:?set OBSIDIAN_PLUGIN_DIR to your vault's .obsidian/plugins/schema folder}/\""
+  },
+  "keywords": [
+    "obsidian",
+    "obsidian-plugin",
+    "typed-notes",
+    "schema",
+    "metadata"
+  ],
+  "author": "rephlex00",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@vitest/ui": "^4.1.5",
+    "builtin-modules": "^3.3.0",
+    "esbuild": "^0.21.0",
+    "obsidian": "latest",
+    "tslib": "^2.6.0",
+    "typescript": "^5.4.0",
+    "vitest": "^4.1.5"
+  },
+  "dependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "js-yaml": "^4.1.1"
+  }
+}

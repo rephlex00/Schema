@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "description": "Starter bundle for the Schema plugin — person, moment, and book types that demonstrate folder/filename templating, promptOnCreate, File/MultiFile targets, and inverse links (person ↔ moment).",
+  "autoRefreshedFields": [
+    { "name": "icon", "kind": "icon" },
+    { "name": "color", "kind": "color" }
+  ],
+  "folderMappings": {},
+  "schemas": [
+    {
+      "name": "person",
+      "tags": ["type/person"],
+      "folder": "People",
+      "filename": "{{firstname}} {{lastname}}",
+      "fields": [
+        { "name": "firstname", "type": "Input", "promptOnCreate": "First name" },
+        { "name": "lastname", "type": "Input", "promptOnCreate": "Last name" },
+        { "name": "email", "type": "Input" },
+        { "name": "notes", "type": "Input" }
+      ],
+      "lookups": [],
+      "defaults": { "icon": "user", "color": "#3b82f6" }
+    },
+    {
+      "name": "moment",
+      "tags": ["type/moment"],
+      "folder": "Moments/{{date:YYYY}}",
+      "filename": "{{date:YYYYMMDD-HHmm}}",
+      "fields": [
+        { "name": "summary", "type": "Input", "promptOnCreate": "What happened?" },
+        { "name": "people", "type": "MultiFile", "target": "person", "inverse": "moments_with_me" }
+      ],
+      "lookups": [],
+      "defaults": { "icon": "calendar", "color": "#f59e0b" }
+    },
+    {
+      "name": "book",
+      "tags": ["type/book"],
+      "folder": "Books",
+      "filename": "{{title}}",
+      "fields": [
+        { "name": "title", "type": "Input", "promptOnCreate": "Book title" },
+        { "name": "author", "type": "File", "target": "person" },
+        { "name": "rating", "type": "Number" },
+        { "name": "finished", "type": "Boolean" }
+      ],
+      "lookups": [],
+      "defaults": { "icon": "book", "color": "#02cc16" }
+    }
+  ]
+}
