@@ -1,13 +1,9 @@
-// Kept over Obsidian's parseYaml/stringifyYaml on purpose: faithful frontmatter
-// serialization needs js-yaml's dump options (sortKeys: false, lineWidth: 10000,
-// noRefs: true), which Obsidian's helpers don't expose. Swapping would risk
-// reflowing or reordering keys in users' notes.
-import * as yaml from "js-yaml";
 import { App, Notice, TFile } from "obsidian";
 import type SchemaPlugin from "../main";
 import type { FieldType, TypeSchema } from "../schema/types";
 import { askMergeChoice, type MergeChoice } from "../ui/template-merge-modal";
 import { effectiveFields, getUniversalFields } from "../util/universal";
+import { dumpFrontmatterYaml, parseFrontmatterYaml } from "../util/yaml";
 import { TemplaterBridge } from "./templater-bridge";
 
 const SEPARATOR = "\n\n---\n\n";
@@ -200,7 +196,7 @@ export async function extractTemplatePropertyList(
 	const yamlText = m[0].replace(/^---\n/, "").replace(/---\n?$/, "");
 	let parsed: unknown;
 	try {
-		parsed = yaml.load(yamlText);
+		parsed = parseFrontmatterYaml(yamlText);
 	} catch {
 		return [];
 	}
@@ -231,8 +227,8 @@ function inferObsidianType(v: unknown): ObsidianRoughType {
 	if (typeof v === "boolean") return "checkbox";
 	if (typeof v === "number") return "number";
 	if (Array.isArray(v)) return "list";
-	// js-yaml parses unquoted ISO dates as Date instances. Treat as date (no
-	// time component preserved, which matches Obsidian's coarse date type).
+	// The YAML 1.1 parser turns unquoted ISO dates into Date instances. Treat as
+	// date (no time component preserved, which matches Obsidian's coarse date type).
 	if (v instanceof Date) return "date";
 	return "text";
 }
@@ -306,14 +302,14 @@ export async function writeTemplatePropertyList(
 	// - If parse fails (Templater syntax like `<% tp.date.now() %>` is invalid
 	//   YAML), splice into the raw text: replace any lines for schema-owned
 	//   keys, leave every other line untouched. This preserves Templater tags,
-	//   block scalars, comments, and any other syntax js-yaml would mangle.
+	//   block scalars, comments, and any other syntax a YAML dump would mangle.
 	const parsed = tryParseFrontmatter(existingBlock);
 	let yamlText: string;
 	if (parsed !== null) {
 		for (const [k, v] of Object.entries(parsed)) {
 			if (!schemaKeys.has(k)) next[k] = v;
 		}
-		yamlText = yaml.dump(next, { sortKeys: false, lineWidth: 10000, noRefs: true });
+		yamlText = dumpFrontmatterYaml(next);
 	} else {
 		yamlText = spliceSchemaKeysIntoRawFrontmatter(existingBlock, next, schemaKeys);
 	}
@@ -328,7 +324,7 @@ function tryParseFrontmatter(block: string): Record<string, unknown> | null {
 	if (!block) return {};
 	const yamlText = block.replace(/^---\n/, "").replace(/---\n?$/, "");
 	try {
-		const parsed = yaml.load(yamlText);
+		const parsed = parseFrontmatterYaml(yamlText);
 		if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
 			return parsed as Record<string, unknown>;
 		}
@@ -340,7 +336,7 @@ function tryParseFrontmatter(block: string): Record<string, unknown> | null {
 }
 
 /** Splice schema-owned keys into a raw frontmatter block without parsing it.
- *  Each schema key gets a single YAML line (dumped via js-yaml as a scalar);
+ *  Each schema key gets a single YAML line (dumped as a scalar);
  *  every existing line whose top-level key is in schemaKeys is replaced, and
  *  other lines (including Templater tags, block scalars, comments) survive
  *  verbatim. Schema keys not yet in the block are appended. */
@@ -381,7 +377,7 @@ function spliceSchemaKeysIntoRawFrontmatter(
 }
 
 function dumpKeyValueLine(key: string, value: unknown): string {
-	const dumped = yaml.dump({ [key]: value }, { sortKeys: false, lineWidth: 10000, noRefs: true });
+	const dumped = dumpFrontmatterYaml({ [key]: value });
 	return dumped.replace(/\n$/, "");
 }
 
