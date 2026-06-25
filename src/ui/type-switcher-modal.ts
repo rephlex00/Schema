@@ -57,12 +57,12 @@ export class TypeSwitcherModal extends SuggestModal<TypeSchema> {
 		el.createSpan({ cls: "schema-switcher-meta", text: meta.join(" · ") });
 	}
 
-	async onChooseSuggestion(schema: TypeSchema): Promise<void> {
+	onChooseSuggestion(schema: TypeSchema): void {
 		// Write the new type to frontmatter. TypeChangeWatcher (subscribed to
 		// metadataCache.on("changed")) will pick this up and run the full
 		// reshelve + clean + body-template pipeline.
 		const typeKey = this.plugin.settings.typeKey;
-		await this.plugin.app.fileManager.processFrontMatter(this.file, (fm) => {
+		void this.plugin.app.fileManager.processFrontMatter(this.file, (fm: Record<string, unknown>) => {
 			fm[typeKey] = schema.name;
 		});
 	}

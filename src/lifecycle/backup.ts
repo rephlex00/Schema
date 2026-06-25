@@ -51,7 +51,7 @@ export async function importSchemas(plugin: SchemaPlugin): Promise<void> {
 	let payload: ExportPayload;
 	try {
 		const text = await plugin.app.vault.read(existing);
-		payload = JSON.parse(text);
+		payload = JSON.parse(text) as ExportPayload;
 	} catch (err) {
 		console.error("[schema] failed to parse import:", err);
 		new Notice(`Schema: failed to parse ${EXPORT_FILE}; see console.`);

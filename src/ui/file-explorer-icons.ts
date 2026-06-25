@@ -128,7 +128,7 @@ export class FileExplorerIconsManager {
 
 		let icon = title.querySelector<HTMLElement>(`.${ICON_CLASS}`);
 		if (!icon) {
-			icon = document.createElement("span");
+			icon = activeDocument.createElement("span");
 			icon.classList.add(ICON_CLASS);
 			title.insertBefore(icon, title.firstChild);
 			title.classList.add(HOST_CLASS);

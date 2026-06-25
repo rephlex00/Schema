@@ -107,7 +107,7 @@ export function renderTypeSelector(
 		}
 
 		// Defer the outside-click binding so the open-click itself doesn't fire it.
-		setTimeout(() => {
+		window.setTimeout(() => {
 			outsideHandler = (e: MouseEvent) => {
 				if (!popup) return;
 				// The settings pane may have re-rendered the trigger away while the

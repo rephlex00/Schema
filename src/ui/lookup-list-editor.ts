@@ -103,9 +103,7 @@ export class LookupListEditor {
 					this.queueUpdate(index, { query: v });
 				});
 				t.inputEl.rows = 4;
-				t.inputEl.style.fontFamily = "var(--font-monospace)";
-				t.inputEl.style.fontSize = "12px";
-				t.inputEl.style.width = "100%";
+				t.inputEl.addClass("schema-code-input-sm");
 			});
 
 		new Setting(body)

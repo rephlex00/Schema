@@ -37,9 +37,6 @@ export class QueryPlaygroundModal extends Modal {
 		queryEl.value = this.query;
 		queryEl.rows = 6;
 		queryEl.spellcheck = false;
-		queryEl.style.width = "100%";
-		queryEl.style.fontFamily = "var(--font-monospace)";
-		queryEl.style.fontSize = "12px";
 		queryEl.addEventListener("input", () => (this.query = queryEl.value));
 
 		const status = contentEl.createEl("div", { cls: "schema-query-status" });
@@ -70,7 +67,7 @@ export class QueryPlaygroundModal extends Modal {
 					});
 					a.dataset.href = f.path;
 					a.addEventListener("click", () => {
-						this.plugin.app.workspace.openLinkText(f.path, file.path, false);
+						void this.plugin.app.workspace.openLinkText(f.path, file.path, false);
 						this.close();
 					});
 				}

@@ -51,9 +51,9 @@ export class AddFieldModal extends Modal {
 		errorEl.hide();
 
 		// Hint shown when the typed name matches an existing global field.
-		const linkHint = contentEl.createEl("div", { cls: "schema-inline-warning" });
-		linkHint.style.color = "var(--text-accent)";
-		linkHint.style.borderLeftColor = "var(--text-accent)";
+		const linkHint = contentEl.createEl("div", {
+			cls: "schema-inline-warning schema-field-name-hint",
+		});
 
 		let typeSelector: TypeSelectorHandle | null = null;
 

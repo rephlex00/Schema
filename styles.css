@@ -432,6 +432,44 @@
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--text-error) 30%, transparent);
 }
 
+/* Monospace / code-style text inputs (Formula, Lookup, and YAML editors).
+   Defined as classes so the TS UI never assigns element.style.* directly. */
+.schema-mono-input {
+  font-family: var(--font-monospace);
+}
+
+.schema-mono-area {
+  min-height: 120px;
+  font-family: var(--font-monospace);
+}
+
+.schema-code-input {
+  width: 100%;
+  font-family: var(--font-monospace);
+}
+
+.schema-code-input-sm {
+  width: 100%;
+  font-family: var(--font-monospace);
+  font-size: 12px;
+}
+
+/* Accent-colored variant of the inline warning, shown when a typed property
+   name matches an existing global field. */
+.schema-field-name-hint {
+  color: var(--text-accent);
+  border-left-color: var(--text-accent);
+}
+
+/* Hides global properties flagged `hidden` from the rendered properties widget
+   in Live Preview and Reading view. The class is toggled by HiddenProperties
+   Manager; Source mode is intentionally not matched, so the raw frontmatter
+   stays visible there. */
+.markdown-source-view.is-live-preview .metadata-property.schema-hidden-prop,
+.markdown-reading-view .metadata-property.schema-hidden-prop {
+  display: none;
+}
+
 .schema-validation-banner {
   margin: 8px 0 16px 0;
   padding: 8px 12px;
@@ -1000,10 +1038,13 @@ details[open] > summary > .schema-summary-chevron {
 .schema-query-playground-input {
   margin: 8px 0;
   padding: 6px;
+  width: 100%;
   border: 1px solid var(--background-modifier-border);
   border-radius: 4px;
   background: var(--background-primary);
   color: var(--text-normal);
+  font-family: var(--font-monospace);
+  font-size: 12px;
 }
 
 .schema-query-status {

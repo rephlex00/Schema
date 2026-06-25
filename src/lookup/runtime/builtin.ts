@@ -1,5 +1,6 @@
 import { App, TFile } from "obsidian";
 import { isoWeek } from "../../util/liquid";
+import { evalExpression } from "../../util/safe-eval";
 import type { QueryResult, QueryRuntime } from "./types";
 
 /**
@@ -38,14 +39,14 @@ export class BuiltinRuntime implements QueryRuntime {
 		}
 		const callbackSrc = filterMatch[1];
 
-		const callback = this.compileFilter(callbackSrc);
-		const pages = this.collectPages(folders);
 		const current = this.makePageProxy(currentFile);
+		const callback = this.compileFilter(callbackSrc, current);
+		const pages = this.collectPages(folders);
 
 		const matches: TFile[] = [];
 		for (const { page, file } of pages) {
 			try {
-				if (callback(page, current, this.luxonShim())) {
+				if (callback(page)) {
 					matches.push(file);
 				}
 			} catch (err) {
@@ -55,20 +56,19 @@ export class BuiltinRuntime implements QueryRuntime {
 		return { files: matches };
 	}
 
-	private compileFilter(src: string): (page: unknown, current: unknown, dvLuxon: unknown) => boolean {
+	private compileFilter(src: string, current: unknown): (page: unknown) => boolean {
 		// We accept a raw arrow-function source like `m => m.type === "event" && current.file.path === ...`.
-		// Free variables `current` and `dv` in the source resolve via parameters
-		// of an outer wrapper function - NOT globals - so we don't pollute
-		// globalThis during query execution. Errors propagate to the per-file
-		// try/catch in run() so we keep the file path in diagnostics.
-		const wrapper = new Function(
-			"page",
-			"current",
-			"dv",
-			`return (${src})(page);`
-		);
-		return (page, current, dvLuxon) =>
-			Boolean(wrapper(page, current, { luxon: dvLuxon }));
+		// The source is evaluated once (here) in the sandboxed interpreter, with
+		// `current` and `dv` provided as scope variables - NOT globals - so query
+		// execution can't reach app globals or the Function constructor. The
+		// resulting arrow becomes a real closure we invoke per page; errors
+		// propagate to the per-file try/catch in run() so we keep the file path
+		// in diagnostics.
+		const arrow = evalExpression(src, { current, dv: { luxon: this.luxonShim() } });
+		if (typeof arrow !== "function") {
+			throw new Error("builtin runtime: .filter() argument is not a function");
+		}
+		return (page) => Boolean((arrow as (p: unknown) => unknown)(page));
 	}
 
 	/** Parse the folder source(s) from a `dv.pages(...)` head. Supports the forms
@@ -170,7 +170,6 @@ export class BuiltinRuntime implements QueryRuntime {
 						toFormat(out: string) {
 							const y = parsed.getFullYear();
 							const m = parsed.getMonth() + 1;
-							const d = parsed.getDate();
 							if (out === "yyyyMM-'W'WW") {
 								const week = isoWeek(parsed);
 								return `${y}${String(m).padStart(2, "0")}-W${String(week).padStart(2, "0")}`;

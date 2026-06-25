@@ -42,18 +42,19 @@ export class FolderMappingWatcher {
 	start(): void {
 		this.refs.push(
 			this.plugin.app.vault.on("create", (file) => {
-				if (!this.isMd(file)) return;
+				if (!(file instanceof TFile) || !this.isMd(file)) return;
+				const mdFile = file;
 				// Defer slightly so the metadataCache has a chance to populate.
 				// Track the timer so a plugin unload mid-defer can cancel it.
 				const id = window.setTimeout(() => {
 					this.createTimers.delete(id);
-					void this.onCreate(file as TFile);
+					void this.onCreate(mdFile);
 				}, CREATE_DEFER_MS);
 				this.createTimers.add(id);
 			}),
 			this.plugin.app.vault.on("rename", (file, oldPath) => {
-				if (!this.isMd(file)) return;
-				void this.onRename(file as TFile, oldPath);
+				if (!(file instanceof TFile) || !this.isMd(file)) return;
+				void this.onRename(file, oldPath);
 			})
 		);
 	}

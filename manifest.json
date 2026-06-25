@@ -1,9 +1,9 @@
 {
   "id": "schema",
   "name": "Schema",
-  "version": "2026.6.21",
-  "minAppVersion": "1.4.0",
-  "description": "One source of truth for typed notes in Obsidian: define object types once, get auto-filing, per-type creation commands, and automatic backlinks.",
+  "version": "2026.6.22",
+  "minAppVersion": "1.11.0",
+  "description": "One source of truth for typed notes: define object types once, get auto-filing, per-type creation commands, and automatic backlinks.",
   "author": "rephlex00",
   "authorUrl": "https://github.com/rephlex00",
   "isDesktopOnly": false

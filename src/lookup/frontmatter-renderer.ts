@@ -113,7 +113,7 @@ export class FrontmatterLookupRenderer {
 		this.inFlight.add(file.path);
 		try {
 			let changed = false;
-			await this.plugin.app.fileManager.processFrontMatter(file, (fm) => {
+			await this.plugin.app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => {
 				for (const [name, links] of next) {
 					const before = JSON.stringify(fm[name] ?? []);
 					const after = JSON.stringify(links);

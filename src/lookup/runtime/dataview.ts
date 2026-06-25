@@ -1,4 +1,5 @@
 import { App, TFile } from "obsidian";
+import { evalExpression } from "../../util/safe-eval";
 import type { QueryResult, QueryRuntime } from "./types";
 
 interface DataviewPlugin {
@@ -37,9 +38,11 @@ export class DataviewRuntime implements QueryRuntime {
 		const api = this.getApi();
 		if (!api) return { files: [] };
 
-		const fn = new Function("dv", "current", `return ${query};`);
 		const currentPage = api.page(current.path);
-		const result = fn(api, currentPage);
+		// Evaluated in the sandboxed interpreter (not `new Function`), with the
+		// Dataview API and current page provided as scope. Arrow callbacks passed
+		// to `.where`/`.filter` become real closures the Dataview API can invoke.
+		const result = evalExpression(query, { dv: api, current: currentPage });
 
 		const files: TFile[] = [];
 		const seen = new Set<string>();

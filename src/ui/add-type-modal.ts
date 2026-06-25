@@ -1,4 +1,4 @@
-import { App, Modal, Notice, Setting } from "obsidian";
+import { Modal, Notice, Setting } from "obsidian";
 import type SchemaPlugin from "../main";
 import type { TypeSchema } from "../schema/types";
 import { FolderSuggest } from "./file-suggest";

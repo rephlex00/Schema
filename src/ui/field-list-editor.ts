@@ -263,7 +263,7 @@ export class FieldListEditor {
 		}
 
 		if (field.type === "Formula") {
-			const opts = (field.options ?? {}) as Record<string, unknown>;
+			const opts = field.options ?? {};
 			const expr = typeof opts.expression === "string" ? opts.expression : "";
 			new Setting(body)
 				.setName("Expression")
@@ -271,7 +271,7 @@ export class FieldListEditor {
 				.addTextArea((t) => {
 					t.setValue(expr);
 					t.inputEl.rows = 2;
-					t.inputEl.style.fontFamily = "var(--font-monospace)";
+					t.inputEl.addClass("schema-mono-input");
 					t.inputEl.disabled = true;
 				});
 			const previewEl = body.createDiv({ cls: "schema-formula-preview" });
@@ -319,7 +319,8 @@ export class FieldListEditor {
 		// create one from the modal's inputs; otherwise reuse what's there.
 		const globals = this.plugin.settings.globalFields;
 		if (!(result.field.name in globals)) {
-			const { promptOnCreate: _, ...rest } = result.field;
+			const rest = { ...result.field };
+			delete rest.promptOnCreate;
 			globals[result.field.name] = { ...rest };
 		}
 		const usage: FieldSchema = {
@@ -371,7 +372,7 @@ export class FieldListEditor {
 		let stripped = 0;
 		for (const file of affectedFiles) {
 			try {
-				await this.plugin.app.fileManager.processFrontMatter(file, (fm) => {
+				await this.plugin.app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => {
 					if (field.name in fm) {
 						delete fm[field.name];
 						stripped++;

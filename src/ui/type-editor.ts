@@ -582,7 +582,7 @@ export class TypeEditor {
 		if (!list) return;
 		const blocks = list.querySelectorAll<HTMLElement>(".schema-type-block");
 		for (const block of Array.from(blocks)) {
-			const summary = block.querySelector(".schema-type-name") as HTMLElement | null;
+			const summary = block.querySelector<HTMLElement>(".schema-type-name");
 			if (summary?.textContent?.trim() === typeName) {
 				(block as HTMLDetailsElement).open = true;
 				block.scrollIntoView({ behavior: "smooth", block: "start" });

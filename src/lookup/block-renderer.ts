@@ -153,7 +153,7 @@ class SchemaLookupRenderChild extends MarkdownRenderChild {
 		link.setAttr("href", f.path);
 		link.addEventListener("click", (ev) => {
 			ev.preventDefault();
-			this.plugin.app.workspace.openLinkText(f.path, this.ctx.sourcePath, ev.metaKey || ev.ctrlKey);
+			void this.plugin.app.workspace.openLinkText(f.path, this.ctx.sourcePath, ev.metaKey || ev.ctrlKey);
 		});
 	}
 }

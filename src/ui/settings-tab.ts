@@ -153,7 +153,7 @@ export class SchemaSettingsTab extends PluginSettingTab {
 				`[data-schema-anchor="${anchor.replace(/"/g, '\\"')}"]`
 			);
 			if (!target) return;
-			if (target instanceof HTMLDetailsElement) target.open = true;
+			if (target.instanceOf(HTMLDetailsElement)) target.open = true;
 			const details = target.closest("details");
 			if (details instanceof HTMLDetailsElement) details.open = true;
 			target.scrollIntoView({ behavior: "smooth", block: "start" });
