@@ -1,6 +1,6 @@
 {
   "name": "obsidian-schema",
-  "version": "2026.6.20",
+  "version": "2026.6.21",
   "description": "One source of truth for typed notes in Obsidian: define object types once, get auto-filing, per-type creation commands, and automatic backlinks.",
   "main": "main.js",
   "scripts": {
