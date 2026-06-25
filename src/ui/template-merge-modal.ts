@@ -44,7 +44,7 @@ export class TemplateMergeModal extends Modal {
 			.addButton((btn) =>
 				btn
 					.setButtonText("Replace")
-					.setDestructive()
+					.setWarning()
 					.onClick(() => this.choose("replace"))
 			)
 			.addButton((btn) =>
